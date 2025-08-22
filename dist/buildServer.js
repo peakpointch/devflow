@@ -21,7 +21,9 @@ const buildServer = (configFilePath) => __awaiter(void 0, void 0, void 0, functi
         const config = (0, parseConfig_js_1.default)(configFilePath);
         console.log(prefixX, "Building production bundle...");
         const result = yield (0, esbuild_1.build)({
-            entryPoints: config.source,
+            entryPoints: Array.isArray(config.source)
+                ? config.source
+                : [config.source],
             bundle: true,
             outdir: config.dist,
             minify: true,

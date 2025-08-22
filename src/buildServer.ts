@@ -10,7 +10,9 @@ const buildServer = async (configFilePath) => {
     console.log(prefixX, "Building production bundle...");
 
     const result = await build({
-      entryPoints: config.source,
+      entryPoints: Array.isArray(config.source)
+        ? config.source
+        : [config.source],
       bundle: true,
       outdir: config.dist,
       minify: true,
