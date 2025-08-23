@@ -14,12 +14,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const esbuild_1 = require("esbuild");
 const parseConfig_js_1 = __importDefault(require("../dist/parseConfig.js"));
-const prefixX = "⚛️  xAtom  👉";
+const _1 = require(".");
 const buildServer = (configFilePath) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
     try {
         const config = (0, parseConfig_js_1.default)(configFilePath);
-        console.log(prefixX, "Building production bundle...");
+        console.log(_1.prefixX, "Building production bundle...");
         const result = yield (0, esbuild_1.build)({
             entryPoints: Array.isArray(config.source)
                 ? config.source
@@ -28,17 +27,17 @@ const buildServer = (configFilePath) => __awaiter(void 0, void 0, void 0, functi
             outdir: config.dist,
             minify: true,
             sourcemap: true,
-            target: ["es2020"], // adjust target as needed
-            format: "esm", // output as ESM; use "cjs" if needed
-            splitting: true, // enable code splitting
+            target: ["ES2020"], // adjust target as needed
+            format: "iife", // output as ESM; use "cjs" if needed
+            splitting: false,
             treeShaking: true,
             platform: "browser",
             external: [], // add dependencies to exclude if needed
         });
-        console.log(prefixX, "Build done!", `Total ${((_a = result.outputFiles) === null || _a === void 0 ? void 0 : _a.length) || "N/A"} files built`);
+        console.log(_1.prefixX, "Build done!");
     }
     catch (err) {
-        console.error(prefixX, "Build failed:", err);
+        console.error(_1.prefixX, "Build failed:", err);
     }
 });
 exports.default = buildServer;

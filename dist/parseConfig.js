@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.checkFileExists = void 0;
+exports.default = parseConfig;
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const zod_1 = require("zod");
@@ -32,7 +33,7 @@ const configZod = zod_1.z
         .min(1, "minimum one dist file must be added"),
     dist: zod_1.z
         .string({
-        invalid_type_error: "❌ source: Invalid source, example ./dist",
+        invalid_type_error: "❌ dist: Invalid dist path, example ./dist",
     })
         .default("./dist"),
     scriptAttribute: zod_1.z
@@ -46,28 +47,27 @@ const configZod = zod_1.z
     .required({
     webflowSubdomain: true,
 });
-const parseConfig = (configPath) => {
+function parseConfig(configPath) {
     if (!(0, exports.checkFileExists)(configPath)) {
-        console.warn("unable to locate config file: ", configPath);
-        process.exit();
+        console.warn("⚠️ unable to locate config file:", configPath);
+        process.exit(1);
     }
-    const configData = JSON.parse(fs_1.default.readFileSync(path_1.default.resolve(configPath)).toString());
+    const configData = JSON.parse(fs_1.default.readFileSync(path_1.default.resolve(configPath), "utf-8"));
     const config = configZod.safeParse(configData);
     if (!config.success) {
         const errors = config.error.format();
-        console.log("xAtom config is invalid 🚨");
+        console.log("xAtom config is invalid ❗");
         console.log("");
         Object.keys(errors).forEach((key) => {
-            if (Array.isArray(errors[key])) {
-                errors[key].forEach((e) => console.log(e));
+            const val = errors[key];
+            if (Array.isArray(val)) {
+                val.forEach((e) => console.log(e));
             }
-            if (typeof errors[key] === "object" &&
-                errors[key]._errors) {
-                errors[key]._errors.forEach((e) => console.log(e));
+            if (typeof val === "object" && (val === null || val === void 0 ? void 0 : val._errors)) {
+                val._errors.forEach((e) => console.log(e));
             }
         });
-        process.exit();
+        process.exit(1);
     }
     return config.data;
-};
-exports.default = parseConfig;
+}

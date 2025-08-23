@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.loadDevServer = exports.loadProxyServer = void 0;
+exports.loadDevServer = void 0;
 const esbuild_1 = require("esbuild");
 const chokidar_1 = __importDefault(require("chokidar"));
 const express_1 = __importDefault(require("express"));
@@ -23,43 +23,46 @@ const axios_1 = __importDefault(require("axios"));
 const path_1 = __importDefault(require("path"));
 const events_1 = __importDefault(require("events"));
 const parseConfig_js_1 = __importDefault(require("../dist/parseConfig.js"));
-const prefixX = "⚛️  xAtom  👉";
+const chalk_1 = __importDefault(require("chalk"));
+const _1 = require(".");
 // -----------------------------
 // Dev build with esbuild + chokidar
 // -----------------------------
 const loadEsbuildDev = (src, dist, reloadEmitter, onInitCB) => __awaiter(void 0, void 0, void 0, function* () {
-    let init = false;
-    const buildOnce = () => __awaiter(void 0, void 0, void 0, function* () {
+    let initialized = false;
+    const buildApp = () => __awaiter(void 0, void 0, void 0, function* () {
         try {
             yield (0, esbuild_1.build)({
                 entryPoints: Array.isArray(src) ? src : [src],
                 bundle: true,
-                outdir: dist,
+                outdir: `${dist}`,
                 sourcemap: true,
                 minify: false,
-                splitting: true,
-                format: "esm",
+                splitting: false,
+                format: "iife",
                 target: ["es2020"],
                 platform: "browser",
             });
-            if (!init) {
-                init = true;
+            if (!initialized) {
+                initialized = true;
                 onInitCB();
             }
             reloadEmitter.emit("file-changes", src);
-            console.log(prefixX, "Build done");
+            console.log(_1.prefixX, "Build done");
         }
         catch (err) {
-            console.error(prefixX, "Build failed:", err.message);
+            console.error(_1.prefixX, "Build failed:", err.message);
         }
     });
     // Initial build
-    yield buildOnce();
+    yield buildApp();
     // Watch for changes
-    const watcher = chokidar_1.default.watch(src, { ignoreInitial: true });
+    const watcher = chokidar_1.default.watch(["src/**/*.js", "src/**/*.ts"], {
+        ignoreInitial: true,
+    });
     watcher.on("all", () => __awaiter(void 0, void 0, void 0, function* () {
-        console.log(prefixX, "File change detected, rebuilding...");
-        yield buildOnce();
+        console.log(_1.prefixX, "File change detected, rebuilding...");
+        yield buildApp();
     }));
 });
 // -----------------------------
@@ -75,12 +78,12 @@ const loadProxyServer = (webflowSubdomain, port, distPath, scriptList, scriptToR
     app.use((0, cookie_parser_1.default)());
     app.use("/____xatom_js", express_1.default.static(path_1.default.resolve(distPath)));
     wsInstance.app.ws("/___xatom-reload", (ws) => {
-        console.log(prefixX, "Auto Reload connection established");
+        console.log(_1.prefixX, "Auto Reload connection established");
     });
     reloadEmitter.on("file-changes", () => {
         wsInstance.getWss().clients.forEach((client) => client.send("reload"));
     });
-    const reloadScript = /*html */ `<script>
+    const reloadScript = `<script>
     if ("WebSocket" in window) {
       (function(){
         const xAtomAutoReloadURL = "ws://localhost:${port}/___xatom-reload";
@@ -104,6 +107,9 @@ const loadProxyServer = (webflowSubdomain, port, distPath, scriptList, scriptToR
         const startPref = Date.now();
         let isPage = false;
         try {
+            // Skip devtools
+            if (req.url.includes("devtools"))
+                return;
             const _res = yield axios_1.default.get(`https://${webflowSubdomain}.webflow.io${req.url}`, {
                 headers: {
                     Referer: `https://${webflowSubdomain}.webflow.io${req.path}`,
@@ -126,11 +132,9 @@ const loadProxyServer = (webflowSubdomain, port, distPath, scriptList, scriptToR
                     ? scriptToRemove
                     : [scriptToRemove];
                 if (scriptToRemove.length) {
-                    dataHtml = dataHtml.replace(new RegExp(`<script\\b[^>]*(?:${scriptToRemove.join("|")}(?: {1}|="))\\b[^>]*>([\\s\\S]*?)<\\/script>`, "mg"), (e) => {
-                        console.log(prefixX, "ÔÜá´©Å   Script Removed", e);
-                        return "";
-                    });
+                    dataHtml = dataHtml.replace(new RegExp(`<script\\b[^>]*(?:${scriptToRemove.join("|")}(?: {1}|="))\\b[^>]*>([\\s\\S]*?)<\\/script>`, "mg"));
                 }
+                console.log(_1.prefixX, `Scripts removed ${scriptToRemove.length}/${scriptToRemove.length}`);
                 res.send(dataHtml.replace("</body>", `${finalScriptPaths}</body>`));
             }
             else {
@@ -138,29 +142,28 @@ const loadProxyServer = (webflowSubdomain, port, distPath, scriptList, scriptToR
             }
         }
         catch (err) {
-            console.log(prefixX, "Page not found", req.path);
-            res.send(`${prefixX} page not found ${req.path} | status : ${err.message}`);
+            console.log(_1.prefixX, "Page not found", req.path);
+            res.send(`${_1.prefixX} page not found ${req.path} | status : ${err.message}`);
         }
         finally {
             const endPref = Date.now();
             if (isPage)
-                console.log(prefixX, "Page", req.url, `took ${endPref - startPref}ms to fetch`);
+                console.log(_1.prefixX, "Page", chalk_1.default.cyan(req.url), `took ${endPref - startPref}ms to fetch`);
         }
     }));
     app.listen(port, () => {
-        console.log(prefixX, `local server http://localhost:${port}`);
+        console.log(_1.prefixX, `local server http://localhost:${port}`);
     });
 };
-exports.loadProxyServer = loadProxyServer;
 // -----------------------------
 // Load dev server
 // -----------------------------
 const loadDevServer = (configFilePath) => {
     const config = (0, parseConfig_js_1.default)(configFilePath);
     const reloadEmitter = new events_1.default.EventEmitter();
-    console.log(prefixX, "Read Documentation 📚: https://xatom.js.org/");
+    console.log(_1.prefixX, "Read Documentation 📚: https://xatom.js.org/");
     loadEsbuildDev(config.source, config.dist, reloadEmitter, () => {
-        (0, exports.loadProxyServer)(config.webflowSubdomain, config.port, config.dist, config.scriptList, config.scriptAttribute, reloadEmitter);
+        loadProxyServer(config.webflowSubdomain, config.port, config.dist, config.scriptList, config.scriptAttribute, reloadEmitter);
     });
 };
 exports.loadDevServer = loadDevServer;

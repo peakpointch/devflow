@@ -9,8 +9,8 @@ import path from "path";
 import events from "events";
 import openurl from "openurl";
 import parseConfig from "../dist/parseConfig.js";
-
-const prefixX = "⚛️  xAtom  👉";
+import chalk from "chalk";
+import { prefixX } from ".";
 
 // -----------------------------
 // Dev build with esbuild + chokidar
@@ -21,24 +21,24 @@ const loadEsbuildDev = async (
   reloadEmitter: events.EventEmitter,
   onInitCB: () => void,
 ): Promise<void> => {
-  let init = false;
+  let initialized = false;
 
-  const buildOnce = async (): Promise<void> => {
+  const buildApp = async (): Promise<void> => {
     try {
       await build({
         entryPoints: Array.isArray(src) ? src : [src],
         bundle: true,
-        outdir: dist,
+        outdir: `${dist}`,
         sourcemap: true,
         minify: false,
-        splitting: true,
-        format: "esm",
+        splitting: false,
+        format: "iife",
         target: ["es2020"],
         platform: "browser",
       });
 
-      if (!init) {
-        init = true;
+      if (!initialized) {
+        initialized = true;
         onInitCB();
       }
 
@@ -50,20 +50,22 @@ const loadEsbuildDev = async (
   };
 
   // Initial build
-  await buildOnce();
+  await buildApp();
 
   // Watch for changes
-  const watcher = chokidar.watch(src, { ignoreInitial: true });
+  const watcher = chokidar.watch(["src/**/*.js", "src/**/*.ts"], {
+    ignoreInitial: true,
+  });
   watcher.on("all", async () => {
     console.log(prefixX, "File change detected, rebuilding...");
-    await buildOnce();
+    await buildApp();
   });
 };
 
 // -----------------------------
 // Proxy server
 // -----------------------------
-export const loadProxyServer = (
+const loadProxyServer = (
   webflowSubdomain: string,
   port: number,
   distPath: string,
@@ -90,7 +92,7 @@ export const loadProxyServer = (
     wsInstance.getWss().clients.forEach((client) => client.send("reload"));
   });
 
-  const reloadScript = /*html */ `<script>
+  const reloadScript = `<script>
     if ("WebSocket" in window) {
       (function(){
         const xAtomAutoReloadURL = "ws://localhost:${port}/___xatom-reload";
@@ -116,6 +118,9 @@ export const loadProxyServer = (
     const startPref = Date.now();
     let isPage = false;
     try {
+      // Skip devtools
+      if (req.url.includes("devtools")) return;
+
       const _res = await axios.get(
         `https://${webflowSubdomain}.webflow.io${req.url}`,
         {
@@ -149,12 +154,12 @@ export const loadProxyServer = (
               `<script\\b[^>]*(?:${scriptToRemove.join("|")}(?: {1}|="))\\b[^>]*>([\\s\\S]*?)<\\/script>`,
               "mg",
             ),
-            (e) => {
-              console.log(prefixX, "ÔÜá´©Å   Script Removed", e);
-              return "";
-            },
           );
         }
+        console.log(
+          prefixX,
+          `Scripts removed ${scriptToRemove.length}/${scriptToRemove.length}`,
+        );
         res.send(dataHtml.replace("</body>", `${finalScriptPaths}</body>`));
       } else {
         res.send(_res.data);
@@ -170,7 +175,7 @@ export const loadProxyServer = (
         console.log(
           prefixX,
           "Page",
-          req.url,
+          chalk.cyan(req.url),
           `took ${endPref - startPref}ms to fetch`,
         );
     }
