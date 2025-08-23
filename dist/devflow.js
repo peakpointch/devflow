@@ -89,6 +89,7 @@ function startWebflowProxy(config, reloadEmitter) {
     ]
         .flat()
         .join("");
+    let scriptsRemovedLog = "";
     app.get("*", (req, res) => __awaiter(this, void 0, void 0, function* () {
         const startPref = Date.now();
         let isPage = false;
@@ -120,7 +121,7 @@ function startWebflowProxy(config, reloadEmitter) {
                 if (config.scriptAttribute.length) {
                     dataHtml = dataHtml.replace(new RegExp(`<script\\b[^>]*(?:${config.scriptAttribute.join("|")}(?: {1}|="))\\b[^>]*>([\\s\\S]*?)<\\/script>`, "mg"));
                 }
-                console.log(cli_1.prefixX, `Scripts removed ${config.scriptAttribute.length}/${config.scriptAttribute.length}`);
+                scriptsRemovedLog = `Scripts removed ${config.scriptAttribute.length}/${config.scriptAttribute.length}`;
                 res.send(dataHtml.replace("</body>", `${finalScriptPaths}</body>`));
             }
             else {
@@ -133,8 +134,13 @@ function startWebflowProxy(config, reloadEmitter) {
         }
         finally {
             const endPref = Date.now();
-            if (isPage)
+            if (isPage) {
                 console.log(cli_1.prefixX, "Page", chalk_1.default.cyan(req.url), `took ${endPref - startPref}ms to fetch`);
+            }
+            if (scriptsRemovedLog) {
+                console.log(cli_1.prefixX, scriptsRemovedLog);
+                scriptsRemovedLog = "";
+            }
         }
     }));
     app.listen(config.port, () => {

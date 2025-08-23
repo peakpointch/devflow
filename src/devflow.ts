@@ -87,6 +87,8 @@ function startWebflowProxy(
     .flat()
     .join("");
 
+  let scriptsRemovedLog = "";
+
   app.get("*", async (req, res) => {
     const startPref = Date.now();
     let isPage = false;
@@ -129,10 +131,7 @@ function startWebflowProxy(
             ),
           );
         }
-        console.log(
-          prefixX,
-          `Scripts removed ${config.scriptAttribute.length}/${config.scriptAttribute.length}`,
-        );
+        scriptsRemovedLog = `Scripts removed ${config.scriptAttribute.length}/${config.scriptAttribute.length}`;
         res.send(dataHtml.replace("</body>", `${finalScriptPaths}</body>`));
       } else {
         res.send(_res.data);
@@ -144,13 +143,18 @@ function startWebflowProxy(
       );
     } finally {
       const endPref = Date.now();
-      if (isPage)
+      if (isPage) {
         console.log(
           prefixX,
           "Page",
           chalk.cyan(req.url),
           `took ${endPref - startPref}ms to fetch`,
         );
+      }
+      if (scriptsRemovedLog) {
+        console.log(prefixX, scriptsRemovedLog);
+        scriptsRemovedLog = "";
+      }
     }
   });
 
