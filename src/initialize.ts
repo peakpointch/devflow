@@ -1,7 +1,7 @@
-import { checkFileExists } from "./parseConfig";
+import { fileExists } from "./parse-config";
 import fs from "fs";
 import path from "path";
-import { prefixX } from ".";
+import { prefixX } from "./cli";
 
 const template = `{
   "webflowSubdomain": "YOUR_WEBFLOW_SUBDOMAIN",
@@ -14,7 +14,7 @@ const template = `{
 `;
 
 export default function initConfig(filePath: string): void {
-  if (checkFileExists(filePath)) {
+  if (fileExists(filePath)) {
     console.log(prefixX, `looks like a ${filePath} config file already exists`);
     return;
   }

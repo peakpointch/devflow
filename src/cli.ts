@@ -2,12 +2,13 @@
 
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
-import buildServer from "./buildServer";
-import { loadDevServer } from "./devServer";
-import initConfig from "./initConfig";
+import builder from "./builder";
+import devflow from "./devflow";
+import initConfig from "./initialize";
 import chalk from "chalk";
 
 export const prefixX = `${chalk.bgMagenta(" xAtom ")} ⏩`;
+const configFileName = "devflow.json";
 
 yargs(hideBin(process.argv))
   .command(
@@ -16,11 +17,11 @@ yargs(hideBin(process.argv))
     (yargs) => {
       return yargs.positional("config", {
         describe: "config file path",
-        default: "xatom.json",
+        default: configFileName,
       });
     },
     (arg) => {
-      loadDevServer(arg.config as string);
+      devflow(arg.config as string);
     },
   )
   .command(
@@ -29,20 +30,20 @@ yargs(hideBin(process.argv))
     (yargs) => {
       return yargs.positional("config", {
         describe: "config file path",
-        default: "xatom.json",
+        default: configFileName,
       });
     },
     (arg) => {
-      buildServer(arg.config as string);
+      builder(arg.config as string);
     },
   )
   .command(
     "init [file]",
-    "create xatom.json configuration file",
+    "create devflow.json configuration file",
     (yargs) => {
       return yargs.positional("file", {
         describe: "config file name",
-        default: "xatom.json",
+        default: configFileName,
       });
     },
     (arg) => {

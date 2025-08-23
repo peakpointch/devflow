@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import { z } from "zod";
 
-export const checkFileExists = (configFilePath: string): boolean => {
+export const fileExists = (configFilePath: string): boolean => {
   return fs.existsSync(path.resolve(configFilePath));
 };
 
@@ -32,11 +32,20 @@ const configZod = z
         })
         .default("./dist"),
       scriptAttribute: z
-        .string({
-          invalid_type_error:
-            "❌ scriptAttribute: invalid script attribute, example replace-script",
-        })
-        .default(""),
+        .union([
+          z.string({
+            invalid_type_error:
+              "❌ scriptAttribute: must be a string or an array of strings",
+          }),
+          z.array(
+            z.string({
+              invalid_type_error:
+                "❌ scriptAttribute: array elements must be strings",
+            }),
+          ),
+        ])
+        .default([])
+        .transform((val) => (typeof val === "string" ? [val] : val)),
     },
     {
       required_error: "❌ Invalid configuration",
@@ -46,8 +55,10 @@ const configZod = z
     webflowSubdomain: true,
   });
 
-export default function parseConfig(configPath: string) {
-  if (!checkFileExists(configPath)) {
+export type DevflowConfig = z.infer<typeof configZod>;
+
+export default function parseConfig(configPath: string): DevflowConfig {
+  if (!fileExists(configPath)) {
     console.warn("⚠️ unable to locate config file:", configPath);
     process.exit(1);
   }
@@ -61,7 +72,7 @@ export default function parseConfig(configPath: string) {
   if (!config.success) {
     const errors = config.error.format();
 
-    console.log("xAtom config is invalid ❗");
+    console.log("Devflow config is invalid ❗");
     console.log("");
 
     Object.keys(errors).forEach((key) => {
@@ -70,7 +81,7 @@ export default function parseConfig(configPath: string) {
         val.forEach((e) => console.log(e));
       }
       if (typeof val === "object" && val?._errors) {
-        val._errors.forEach((e) => console.log(e));
+        val._errors.forEach((e: any) => console.log(e));
       }
     });
 

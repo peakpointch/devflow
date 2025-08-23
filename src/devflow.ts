@@ -7,72 +7,45 @@ import cookieParser from "cookie-parser";
 import axios from "axios";
 import path from "path";
 import events from "events";
-import openurl from "openurl";
-import parseConfig from "../dist/parseConfig.js";
+import parseConfig, { DevflowConfig } from "./parse-config";
 import chalk from "chalk";
-import { prefixX } from ".";
+import { prefixX } from "./cli";
 
 // -----------------------------
-// Dev build with esbuild + chokidar
+// Build app with esbuild
 // -----------------------------
-const loadEsbuildDev = async (
-  src: string | string[],
-  dist: string,
+async function buildApp(
+  config: DevflowConfig,
   reloadEmitter: events.EventEmitter,
-  onInitCB: () => void,
-): Promise<void> => {
-  let initialized = false;
+): Promise<void> {
+  try {
+    await build({
+      entryPoints: Array.isArray(config.source)
+        ? config.source
+        : [config.source],
+      bundle: true,
+      outdir: `${config.dist}`,
+      sourcemap: true,
+      minify: false,
+      format: "iife",
+      target: ["es2020"],
+      platform: "browser",
+    });
 
-  const buildApp = async (): Promise<void> => {
-    try {
-      await build({
-        entryPoints: Array.isArray(src) ? src : [src],
-        bundle: true,
-        outdir: `${dist}`,
-        sourcemap: true,
-        minify: false,
-        splitting: false,
-        format: "iife",
-        target: ["es2020"],
-        platform: "browser",
-      });
-
-      if (!initialized) {
-        initialized = true;
-        onInitCB();
-      }
-
-      reloadEmitter.emit("file-changes", src);
-      console.log(prefixX, "Build done");
-    } catch (err: any) {
-      console.error(prefixX, "Build failed:", err.message);
-    }
-  };
-
-  // Initial build
-  await buildApp();
-
-  // Watch for changes
-  const watcher = chokidar.watch(["src/**/*.js", "src/**/*.ts"], {
-    ignoreInitial: true,
-  });
-  watcher.on("all", async () => {
-    console.log(prefixX, "File change detected, rebuilding...");
-    await buildApp();
-  });
-};
+    reloadEmitter.emit("file-changes", config.source);
+    console.log(prefixX, "Build done");
+  } catch (err: any) {
+    console.error(prefixX, "Build failed:", err.message);
+  }
+}
 
 // -----------------------------
 // Proxy server
 // -----------------------------
-const loadProxyServer = (
-  webflowSubdomain: string,
-  port: number,
-  distPath: string,
-  scriptList: string[],
-  scriptToRemove: string | string[],
+function startWebflowProxy(
+  config: DevflowConfig,
   reloadEmitter: events.EventEmitter,
-) => {
+) {
   const app = express();
   const wsInstance = expressWs(app); // typed wrapper
   app.use(
@@ -82,9 +55,9 @@ const loadProxyServer = (
     }),
   );
   app.use(cookieParser());
-  app.use("/____xatom_js", express.static(path.resolve(distPath)));
+  app.use("/____xatom_js", express.static(path.resolve(config.dist)));
 
-  wsInstance.app.ws("/___xatom-reload", (ws) => {
+  wsInstance.app.ws("/___xatom-reload", () => {
     console.log(prefixX, "Auto Reload connection established");
   });
 
@@ -95,7 +68,7 @@ const loadProxyServer = (
   const reloadScript = `<script>
     if ("WebSocket" in window) {
       (function(){
-        const xAtomAutoReloadURL = "ws://localhost:${port}/___xatom-reload";
+        const xAtomAutoReloadURL = "ws://localhost:${config.port}/___xatom-reload";
         const socket = new WebSocket(xAtomAutoReloadURL);
         socket.onmessage = function(event){
           if(event.data === "reload"){
@@ -109,7 +82,7 @@ const loadProxyServer = (
 
   const finalScriptPaths = [
     reloadScript,
-    scriptList.map((d) => `<script src="/____xatom_js/${d}"></script>`),
+    config.scriptList.map((d) => `<script src="/____xatom_js/${d}"></script>`),
   ]
     .flat()
     .join("");
@@ -122,10 +95,10 @@ const loadProxyServer = (
       if (req.url.includes("devtools")) return;
 
       const _res = await axios.get(
-        `https://${webflowSubdomain}.webflow.io${req.url}`,
+        `https://${config.webflowSubdomain}.webflow.io${req.url}`,
         {
           headers: {
-            Referer: `https://${webflowSubdomain}.webflow.io${req.path}`,
+            Referer: `https://${config.webflowSubdomain}.webflow.io${req.path}`,
             "Referrer-Policy": "strict-origin-when-cross-origin",
             "User-Agent": req.headers["user-agent"] || "",
             accept:
@@ -145,20 +118,20 @@ const loadProxyServer = (
 
       if (type && type.includes("text/html")) {
         isPage = true;
-        scriptToRemove = Array.isArray(scriptToRemove)
-          ? scriptToRemove
-          : [scriptToRemove];
-        if (scriptToRemove.length) {
+        config.scriptAttribute = Array.isArray(config.scriptAttribute)
+          ? config.scriptAttribute
+          : [config.scriptAttribute];
+        if (config.scriptAttribute.length) {
           dataHtml = dataHtml.replace(
             new RegExp(
-              `<script\\b[^>]*(?:${scriptToRemove.join("|")}(?: {1}|="))\\b[^>]*>([\\s\\S]*?)<\\/script>`,
+              `<script\\b[^>]*(?:${config.scriptAttribute.join("|")}(?: {1}|="))\\b[^>]*>([\\s\\S]*?)<\\/script>`,
               "mg",
             ),
           );
         }
         console.log(
           prefixX,
-          `Scripts removed ${scriptToRemove.length}/${scriptToRemove.length}`,
+          `Scripts removed ${config.scriptAttribute.length}/${config.scriptAttribute.length}`,
         );
         res.send(dataHtml.replace("</body>", `${finalScriptPaths}</body>`));
       } else {
@@ -181,28 +154,32 @@ const loadProxyServer = (
     }
   });
 
-  app.listen(port, () => {
-    console.log(prefixX, `local server http://localhost:${port}`);
+  app.listen(config.port, () => {
+    console.log(prefixX, `local server http://localhost:${config.port}`);
   });
-};
+}
 
 // -----------------------------
-// Load dev server
+// Start Devflow
 // -----------------------------
-export const loadDevServer = (configFilePath: string) => {
+export default async function devflow(configFilePath: string) {
   const config = parseConfig(configFilePath);
   const reloadEmitter = new events.EventEmitter();
 
   console.log(prefixX, "Read Documentation 📚: https://xatom.js.org/");
 
-  loadEsbuildDev(config.source, config.dist, reloadEmitter, () => {
-    loadProxyServer(
-      config.webflowSubdomain,
-      config.port,
-      config.dist,
-      config.scriptList,
-      config.scriptAttribute,
-      reloadEmitter,
-    );
+  // Initial build
+  await buildApp(config, reloadEmitter);
+
+  // Start webflow proxy server, mirroring the .webflow.io staging domain
+  startWebflowProxy(config, reloadEmitter);
+
+  // Watch for changes
+  const watcher = chokidar.watch(["src/**/*.js", "src/**/*.ts"], {
+    ignoreInitial: true,
   });
-};
+  watcher.on("all", async () => {
+    console.log(prefixX, "File change detected, rebuilding...");
+    await buildApp(config, reloadEmitter);
+  });
+}
