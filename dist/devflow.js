@@ -28,7 +28,7 @@ const cli_1 = require("./cli");
 // -----------------------------
 // Build app with esbuild
 // -----------------------------
-function buildApp(config, reloadEmitter) {
+function buildApp(config) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             yield (0, esbuild_1.build)({
@@ -43,7 +43,6 @@ function buildApp(config, reloadEmitter) {
                 target: ["es2020"],
                 platform: "browser",
             });
-            reloadEmitter.emit("file-changes", config.source);
             console.log(cli_1.prefixX, "Build done");
         }
         catch (err) {
@@ -55,6 +54,10 @@ function buildApp(config, reloadEmitter) {
 // Proxy server
 // -----------------------------
 function startWebflowProxy(config, reloadEmitter) {
+    const routes = {
+        livereload: "/__livereload",
+        dist: "/__dist",
+    };
     const app = (0, express_1.default)();
     const wsInstance = (0, express_ws_1.default)(app); // typed wrapper
     app.use((0, cors_1.default)({
@@ -62,30 +65,41 @@ function startWebflowProxy(config, reloadEmitter) {
         origin: [/.*/],
     }));
     app.use((0, cookie_parser_1.default)());
-    app.use("/____xatom_js", express_1.default.static(path_1.default.resolve(config.dist)));
-    wsInstance.app.ws("/___xatom-reload", () => {
+    app.use(routes.dist, express_1.default.static(path_1.default.resolve(config.dist)));
+    wsInstance.app.ws(routes.livereload, () => {
         console.log(cli_1.prefixX, "Auto Reload connection established");
     });
-    reloadEmitter.on("file-changes", () => {
+    reloadEmitter.on("script-change", () => {
         wsInstance.getWss().clients.forEach((client) => client.send("reload"));
     });
+    reloadEmitter.on("styles-change", () => {
+        wsInstance.getWss().clients.forEach((client) => client.send("reload-css"));
+    });
     const reloadScript = `<script>
-    if ("WebSocket" in window) {
-      (function(){
-        const xAtomAutoReloadURL = "ws://localhost:${config.port}/___xatom-reload";
-        const socket = new WebSocket(xAtomAutoReloadURL);
-        socket.onmessage = function(event){
-          if(event.data === "reload"){
-            window.location.reload();
-          }else
-            console.log(event);
-        }
-      })()
-    }
+  if ("WebSocket" in window) {
+    (function () {
+      const devflowLivereloadURL =
+        "ws://localhost:${config.port}${routes.livereload}";
+      const socket = new WebSocket(devflowLivereloadURL);
+      socket.onmessage = function (event) {
+        if (event.data === "reload") {
+          window.location.reload();
+        } else if (event.data === "reload-css"){
+          const stylesheets = document.querySelectorAll('link[rel="stylesheet"][data-dyn-css="true"]');
+          stylesheets.forEach((sheet) => {
+            const url = new URL(sheet.href);
+            url.searchParams.set("t", Date.now().toString());
+            sheet.href = url.toString();
+          });
+        } else console.log(event);
+      };
+    })();
+  }
   </script>`;
-    const finalScriptPaths = [
+    const stylesheetTags = [].flat().join("");
+    const scriptTags = [
         reloadScript,
-        config.scriptList.map((d) => `<script src="/____xatom_js/${d}"></script>`),
+        config.scriptList.map((script) => `<script src="${routes.dist}/${script}"></script>`),
     ]
         .flat()
         .join("");
@@ -122,7 +136,7 @@ function startWebflowProxy(config, reloadEmitter) {
                     dataHtml = dataHtml.replace(new RegExp(`<script\\b[^>]*(?:${config.scriptAttribute.join("|")}(?: {1}|="))\\b[^>]*>([\\s\\S]*?)<\\/script>`, "mg"));
                 }
                 scriptsRemovedLog = `Scripts removed ${config.scriptAttribute.length}/${config.scriptAttribute.length}`;
-                res.send(dataHtml.replace("</body>", `${finalScriptPaths}</body>`));
+                res.send(dataHtml.replace("</body>", `${scriptTags}</body>`));
             }
             else {
                 res.send(_res.data);
@@ -156,16 +170,24 @@ function devflow(configFilePath) {
         const reloadEmitter = new events_1.default.EventEmitter();
         console.log(cli_1.prefixX, "Read Documentation 📚: https://xatom.js.org/");
         // Initial build
-        yield buildApp(config, reloadEmitter);
+        yield buildApp(config);
         // Start webflow proxy server, mirroring the .webflow.io staging domain
         startWebflowProxy(config, reloadEmitter);
+        reloadEmitter.emit("script-change", config.source);
         // Watch for changes
-        const watcher = chokidar_1.default.watch(["src/**/*.js", "src/**/*.ts"], {
+        const watcher = chokidar_1.default.watch(["src/"], {
             ignoreInitial: true,
         });
-        watcher.on("all", () => __awaiter(this, void 0, void 0, function* () {
-            console.log(cli_1.prefixX, "File change detected, rebuilding...");
-            yield buildApp(config, reloadEmitter);
+        watcher.on("all", (_, filePath) => __awaiter(this, void 0, void 0, function* () {
+            if (/\.(js|ts)$/.test(filePath)) {
+                console.log(cli_1.prefixX, "File change detected, rebuilding...");
+                yield buildApp(config);
+                reloadEmitter.emit("script-change", config.source);
+            }
+            else if (/\.(css)$/.test(filePath)) {
+                console.log(cli_1.prefixX, "CSS change detected, reloading stylesheets...");
+                reloadEmitter.emit("styles-change", config.source);
+            }
         }));
     });
 }
