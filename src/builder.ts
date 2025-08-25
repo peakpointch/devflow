@@ -20,6 +20,7 @@ export default async function builder(configFilePath) {
       target: ["ES2020"],
       treeShaking: true,
       platform: "browser",
+      external: ["@vime/core"],
     });
 
     console.log(prefixX, "Build done!");

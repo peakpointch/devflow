@@ -33,6 +33,7 @@ function builder(configFilePath) {
                 target: ["ES2020"],
                 treeShaking: true,
                 platform: "browser",
+                external: ["@vime/core"],
             });
             console.log(cli_1.prefixX, "Build done!");
         }
