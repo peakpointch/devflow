@@ -42,6 +42,7 @@ function buildApp(config) {
                 format: "iife",
                 target: ["es2020"],
                 platform: "browser",
+                external: ["@vime/core"],
             });
             console.log(cli_1.prefixX, "Build done");
         }

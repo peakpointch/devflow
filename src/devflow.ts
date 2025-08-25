@@ -27,6 +27,7 @@ async function buildApp(config: DevflowConfig): Promise<void> {
       format: "iife",
       target: ["es2020"],
       platform: "browser",
+      external: ["@vime/core"],
     });
 
     console.log(prefixX, "Build done");
