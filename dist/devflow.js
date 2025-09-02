@@ -26,6 +26,19 @@ const parse_config_1 = __importDefault(require("./parse-config"));
 const chalk_1 = __importDefault(require("chalk"));
 const cli_1 = require("./cli");
 const strip_ansi_1 = __importDefault(require("strip-ansi"));
+/**
+ * Custom routes that are not mirrored from devflow.
+ */
+const routes = {
+    /**
+     *
+     */
+    livereload: "/__livereload",
+    /**
+     * Host local files
+     */
+    dist: "/__dist",
+};
 // -----------------------------
 // Build app with esbuild
 // -----------------------------
@@ -49,6 +62,39 @@ function buildApp(config) {
             console.error(cli_1.prefixX, "Build failed:", err.message);
         }
     });
+}
+function getReloadScript(config) {
+    return `<script>
+  if ("WebSocket" in window) {
+    (function () {
+      const devflowLivereloadURL =
+        "ws://localhost:${config.port}${routes.livereload}";
+      const socket = new WebSocket(devflowLivereloadURL);
+      socket.onmessage = function (event) {
+        if (event.data === "reload") {
+          window.location.reload();
+        } else if (event.data === "reload-css"){
+          const stylesheets = document.querySelectorAll('link[rel="stylesheet"][data-dyn-css="true"]');
+          stylesheets.forEach((sheet) => {
+            const url = new URL(sheet.href);
+            url.searchParams.set("t", Date.now().toString());
+            sheet.href = url.toString();
+          });
+        } else console.log(event);
+      };
+    })();
+  }
+  </script>`;
+}
+function getScripts(config) {
+    const scripts = [
+        getReloadScript(config),
+        config.scriptList.map((script) => `<script src="${routes.dist}/${script}"></script>`),
+    ];
+    return scripts.flat().join("");
+}
+function getStylesheets(config) {
+    return [].flat().join("");
 }
 function routeWfAuth(app, config) {
     app.post("/.wf_auth", (req, res) => __awaiter(this, void 0, void 0, function* () {
@@ -93,10 +139,6 @@ function routeWfAuth(app, config) {
 // Proxy server
 // -----------------------------
 function startWebflowProxy(config, reloadEmitter) {
-    const routes = {
-        livereload: "/__livereload",
-        dist: "/__dist",
-    };
     const app = (0, express_1.default)();
     const wsInstance = (0, express_ws_1.default)(app); // typed wrapper
     app.use((0, cors_1.default)({
@@ -116,39 +158,13 @@ function startWebflowProxy(config, reloadEmitter) {
     reloadEmitter.on("styles-change", () => {
         wsInstance.getWss().clients.forEach((client) => client.send("reload-css"));
     });
-    const reloadScript = `<script>
-  if ("WebSocket" in window) {
-    (function () {
-      const devflowLivereloadURL =
-        "ws://localhost:${config.port}${routes.livereload}";
-      const socket = new WebSocket(devflowLivereloadURL);
-      socket.onmessage = function (event) {
-        if (event.data === "reload") {
-          window.location.reload();
-        } else if (event.data === "reload-css"){
-          const stylesheets = document.querySelectorAll('link[rel="stylesheet"][data-dyn-css="true"]');
-          stylesheets.forEach((sheet) => {
-            const url = new URL(sheet.href);
-            url.searchParams.set("t", Date.now().toString());
-            sheet.href = url.toString();
-          });
-        } else console.log(event);
-      };
-    })();
-  }
-  </script>`;
-    const stylesheetTags = [].flat().join("");
-    const scriptTags = [
-        reloadScript,
-        config.scriptList.map((script) => `<script src="${routes.dist}/${script}"></script>`),
-    ]
-        .flat()
-        .join("");
-    let scriptsRemovedLog = "";
+    const scripts = getScripts(config);
+    const stylesheets = getStylesheets(config);
     routeWfAuth(app, config);
     app.get("*", (req, res) => __awaiter(this, void 0, void 0, function* () {
         const startPref = Date.now();
         let isPage = false;
+        let scriptsRemovedLog = "";
         try {
             // Skip devtools
             if (req.url.includes("devtools"))
@@ -178,7 +194,7 @@ function startWebflowProxy(config, reloadEmitter) {
                     dataHtml = dataHtml.replace(new RegExp(`<script\\b[^>]*(?:${config.scriptAttribute.join("|")}(?: {1}|="))\\b[^>]*>([\\s\\S]*?)<\\/script>`, "mg"));
                 }
                 scriptsRemovedLog = `Scripts removed ${config.scriptAttribute.length}/${config.scriptAttribute.length}`;
-                res.send(dataHtml.replace("</body>", `${scriptTags}</body>`));
+                res.send(dataHtml.replace("</body>", `${scripts}</body>`));
             }
             else {
                 res.send(_res.data);
@@ -201,7 +217,6 @@ function startWebflowProxy(config, reloadEmitter) {
             }
             if (scriptsRemovedLog) {
                 console.log(cli_1.prefixX, scriptsRemovedLog);
-                scriptsRemovedLog = "";
             }
         }
     }));

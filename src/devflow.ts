@@ -12,6 +12,20 @@ import chalk from "chalk";
 import { prefixX } from "./cli";
 import stripAnsi from "strip-ansi";
 
+/**
+ * Custom routes that are not mirrored from devflow.
+ */
+const routes = {
+  /**
+   *
+   */
+  livereload: "/__livereload",
+  /**
+   * Host local files
+   */
+  dist: "/__dist",
+};
+
 // -----------------------------
 // Build app with esbuild
 // -----------------------------
@@ -33,6 +47,44 @@ async function buildApp(config: DevflowConfig): Promise<void> {
   } catch (err: any) {
     console.error(prefixX, "Build failed:", err.message);
   }
+}
+
+function getReloadScript(config: DevflowConfig): string {
+  return `<script>
+  if ("WebSocket" in window) {
+    (function () {
+      const devflowLivereloadURL =
+        "ws://localhost:${config.port}${routes.livereload}";
+      const socket = new WebSocket(devflowLivereloadURL);
+      socket.onmessage = function (event) {
+        if (event.data === "reload") {
+          window.location.reload();
+        } else if (event.data === "reload-css"){
+          const stylesheets = document.querySelectorAll('link[rel="stylesheet"][data-dyn-css="true"]');
+          stylesheets.forEach((sheet) => {
+            const url = new URL(sheet.href);
+            url.searchParams.set("t", Date.now().toString());
+            sheet.href = url.toString();
+          });
+        } else console.log(event);
+      };
+    })();
+  }
+  </script>`;
+}
+
+function getScripts(config: DevflowConfig): string {
+  const scripts = [
+    getReloadScript(config),
+    config.scriptList.map(
+      (script) => `<script src="${routes.dist}/${script}"></script>`,
+    ),
+  ];
+  return scripts.flat().join("");
+}
+
+function getStylesheets(config: DevflowConfig): string {
+  return [].flat().join("");
 }
 
 function routeWfAuth(
@@ -93,11 +145,6 @@ function startWebflowProxy(
   config: DevflowConfig,
   reloadEmitter: events.EventEmitter,
 ) {
-  const routes = {
-    livereload: "/__livereload",
-    dist: "/__dist",
-  };
-
   const app = express();
   const wsInstance = expressWs(app); // typed wrapper
   app.use(
@@ -123,45 +170,15 @@ function startWebflowProxy(
     wsInstance.getWss().clients.forEach((client) => client.send("reload-css"));
   });
 
-  const reloadScript = `<script>
-  if ("WebSocket" in window) {
-    (function () {
-      const devflowLivereloadURL =
-        "ws://localhost:${config.port}${routes.livereload}";
-      const socket = new WebSocket(devflowLivereloadURL);
-      socket.onmessage = function (event) {
-        if (event.data === "reload") {
-          window.location.reload();
-        } else if (event.data === "reload-css"){
-          const stylesheets = document.querySelectorAll('link[rel="stylesheet"][data-dyn-css="true"]');
-          stylesheets.forEach((sheet) => {
-            const url = new URL(sheet.href);
-            url.searchParams.set("t", Date.now().toString());
-            sheet.href = url.toString();
-          });
-        } else console.log(event);
-      };
-    })();
-  }
-  </script>`;
-
-  const stylesheetTags = [].flat().join("");
-  const scriptTags = [
-    reloadScript,
-    config.scriptList.map(
-      (script) => `<script src="${routes.dist}/${script}"></script>`,
-    ),
-  ]
-    .flat()
-    .join("");
-
-  let scriptsRemovedLog = "";
+  const scripts = getScripts(config);
+  const stylesheets = getStylesheets(config);
 
   routeWfAuth(app, config);
 
   app.get("*", async (req, res) => {
     const startPref = Date.now();
     let isPage = false;
+    let scriptsRemovedLog = "";
     try {
       // Skip devtools
       if (req.url.includes("devtools")) return;
@@ -202,7 +219,7 @@ function startWebflowProxy(
           );
         }
         scriptsRemovedLog = `Scripts removed ${config.scriptAttribute.length}/${config.scriptAttribute.length}`;
-        res.send(dataHtml.replace("</body>", `${scriptTags}</body>`));
+        res.send(dataHtml.replace("</body>", `${scripts}</body>`));
       } else {
         res.send(_res.data);
       }
@@ -228,7 +245,6 @@ function startWebflowProxy(
       }
       if (scriptsRemovedLog) {
         console.log(prefixX, scriptsRemovedLog);
-        scriptsRemovedLog = "";
       }
     }
   });
