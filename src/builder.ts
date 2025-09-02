@@ -9,9 +9,7 @@ export default async function builder(configFilePath) {
     console.log(prefixX, "Building production bundle...");
 
     await build({
-      entryPoints: Array.isArray(config.source)
-        ? config.source
-        : [config.source],
+      entryPoints: config.source,
       bundle: true,
       outdir: config.dist,
       minify: true,

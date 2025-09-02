@@ -22,9 +22,7 @@ function builder(configFilePath) {
             const config = (0, parse_config_1.default)(configFilePath);
             console.log(cli_1.prefixX, "Building production bundle...");
             yield (0, esbuild_1.build)({
-                entryPoints: Array.isArray(config.source)
-                    ? config.source
-                    : [config.source],
+                entryPoints: config.source,
                 bundle: true,
                 outdir: config.dist,
                 minify: true,

@@ -19,10 +19,19 @@ const configZod = z
         })
         .default(3015),
       source: z
-        .string({
-          invalid_type_error: "❌ source: Invalid source, example ./src",
-        })
-        .default("./src"),
+        .union([
+          z.string({
+            invalid_type_error:
+              "❌ source: must be a string or an array of strings",
+          }),
+          z.array(
+            z.string({
+              invalid_type_error: "❌ source: array elements must be strings",
+            }),
+          ),
+        ])
+        .default(["./src"])
+        .transform((val) => (typeof val === "string" ? [val] : val)),
       scriptList: z
         .array(z.string())
         .min(1, "minimum one dist file must be added"),

@@ -10,6 +10,7 @@ import events from "events";
 import parseConfig, { DevflowConfig } from "./parse-config";
 import chalk from "chalk";
 import { prefixX } from "./cli";
+import stripAnsi from "strip-ansi";
 
 // -----------------------------
 // Build app with esbuild
@@ -17,9 +18,7 @@ import { prefixX } from "./cli";
 async function buildApp(config: DevflowConfig): Promise<void> {
   try {
     await build({
-      entryPoints: Array.isArray(config.source)
-        ? config.source
-        : [config.source],
+      entryPoints: config.source,
       bundle: true,
       outdir: `${config.dist}`,
       sourcemap: true,
@@ -34,6 +33,57 @@ async function buildApp(config: DevflowConfig): Promise<void> {
   } catch (err: any) {
     console.error(prefixX, "Build failed:", err.message);
   }
+}
+
+function routeWfAuth(
+  app: ReturnType<typeof express>,
+  config: DevflowConfig,
+): void {
+  app.post("/.wf_auth", async (req, res) => {
+    try {
+      const body = new URLSearchParams(req.body).toString();
+
+      const _res = await axios.post(
+        `https://${config.webflowSubdomain}.webflow.io/.wf_auth`,
+        body,
+        {
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "User-Agent": req.headers["user-agent"] || "",
+            Cookie: req.headers.cookie || "",
+            Origin: `https://${config.webflowSubdomain}.webflow.io`,
+            Referer: `https://${config.webflowSubdomain}.webflow.io${req.headers.referer?.replace(/^https?:\/\/[^/]+/, "") || "/"}`,
+            Accept:
+              "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+            "Accept-Language":
+              req.headers["accept-language"] || "en-US,en;q=0.9",
+            "Cache-Control": "no-cache",
+            Pragma: "no-cache",
+          },
+          maxRedirects: 0, // don't auto-follow
+          validateStatus: () => true, // let us handle 302/401/etc.
+          withCredentials: true,
+        },
+      );
+
+      // Forward cookies
+      if (_res.headers["set-cookie"]) {
+        res.setHeader("set-cookie", _res.headers["set-cookie"]);
+      }
+
+      // Forward redirect if present
+      if (_res.status >= 300 && _res.status < 400 && _res.headers.location) {
+        return res.redirect(_res.status, _res.headers.location);
+      }
+
+      res.status(_res.status).send(_res.data);
+    } catch (err: any) {
+      console.error("Error proxying /.wf_auth", err.message);
+      res
+        .status(err.response?.status || 500)
+        .send(err.response?.data || "Auth error");
+    }
+  });
 }
 
 // -----------------------------
@@ -58,6 +108,8 @@ function startWebflowProxy(
   );
   app.use(cookieParser());
   app.use(routes.dist, express.static(path.resolve(config.dist)));
+  app.use(express.urlencoded({ extended: true }));
+  app.use(express.json());
 
   wsInstance.app.ws(routes.livereload, () => {
     console.log(prefixX, "Auto Reload connection established");
@@ -104,6 +156,8 @@ function startWebflowProxy(
     .join("");
 
   let scriptsRemovedLog = "";
+
+  routeWfAuth(app, config);
 
   app.get("*", async (req, res) => {
     const startPref = Date.now();
@@ -153,10 +207,15 @@ function startWebflowProxy(
         res.send(_res.data);
       }
     } catch (err: any) {
-      console.log(prefixX, "Page not found", req.path);
-      res.send(
-        `${prefixX} page not found ${req.path} | status : ${err.message}`,
-      );
+      // TODO: If the status code is 401, display webflow's password protected login page that was shipped with that code.
+      if (err.response && err.response.status === 401) {
+        res.status(401).send(err.response.data);
+      } else {
+        console.log(prefixX, "Page not found", req.path);
+        res.send(
+          `${stripAnsi(prefixX)} page not found ${req.path} | status : ${err.message}`,
+        );
+      }
     } finally {
       const endPref = Date.now();
       if (isPage) {

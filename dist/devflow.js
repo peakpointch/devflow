@@ -25,6 +25,7 @@ const events_1 = __importDefault(require("events"));
 const parse_config_1 = __importDefault(require("./parse-config"));
 const chalk_1 = __importDefault(require("chalk"));
 const cli_1 = require("./cli");
+const strip_ansi_1 = __importDefault(require("strip-ansi"));
 // -----------------------------
 // Build app with esbuild
 // -----------------------------
@@ -32,9 +33,7 @@ function buildApp(config) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             yield (0, esbuild_1.build)({
-                entryPoints: Array.isArray(config.source)
-                    ? config.source
-                    : [config.source],
+                entryPoints: config.source,
                 bundle: true,
                 outdir: `${config.dist}`,
                 sourcemap: true,
@@ -50,6 +49,45 @@ function buildApp(config) {
             console.error(cli_1.prefixX, "Build failed:", err.message);
         }
     });
+}
+function routeWfAuth(app, config) {
+    app.post("/.wf_auth", (req, res) => __awaiter(this, void 0, void 0, function* () {
+        var _a, _b, _c;
+        try {
+            const body = new URLSearchParams(req.body).toString();
+            const _res = yield axios_1.default.post(`https://${config.webflowSubdomain}.webflow.io/.wf_auth`, body, {
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "User-Agent": req.headers["user-agent"] || "",
+                    Cookie: req.headers.cookie || "",
+                    Origin: `https://${config.webflowSubdomain}.webflow.io`,
+                    Referer: `https://${config.webflowSubdomain}.webflow.io${((_a = req.headers.referer) === null || _a === void 0 ? void 0 : _a.replace(/^https?:\/\/[^/]+/, "")) || "/"}`,
+                    Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+                    "Accept-Language": req.headers["accept-language"] || "en-US,en;q=0.9",
+                    "Cache-Control": "no-cache",
+                    Pragma: "no-cache",
+                },
+                maxRedirects: 0, // don't auto-follow
+                validateStatus: () => true, // let us handle 302/401/etc.
+                withCredentials: true,
+            });
+            // Forward cookies
+            if (_res.headers["set-cookie"]) {
+                res.setHeader("set-cookie", _res.headers["set-cookie"]);
+            }
+            // Forward redirect if present
+            if (_res.status >= 300 && _res.status < 400 && _res.headers.location) {
+                return res.redirect(_res.status, _res.headers.location);
+            }
+            res.status(_res.status).send(_res.data);
+        }
+        catch (err) {
+            console.error("Error proxying /.wf_auth", err.message);
+            res
+                .status(((_b = err.response) === null || _b === void 0 ? void 0 : _b.status) || 500)
+                .send(((_c = err.response) === null || _c === void 0 ? void 0 : _c.data) || "Auth error");
+        }
+    }));
 }
 // -----------------------------
 // Proxy server
@@ -67,6 +105,8 @@ function startWebflowProxy(config, reloadEmitter) {
     }));
     app.use((0, cookie_parser_1.default)());
     app.use(routes.dist, express_1.default.static(path_1.default.resolve(config.dist)));
+    app.use(express_1.default.urlencoded({ extended: true }));
+    app.use(express_1.default.json());
     wsInstance.app.ws(routes.livereload, () => {
         console.log(cli_1.prefixX, "Auto Reload connection established");
     });
@@ -105,6 +145,7 @@ function startWebflowProxy(config, reloadEmitter) {
         .flat()
         .join("");
     let scriptsRemovedLog = "";
+    routeWfAuth(app, config);
     app.get("*", (req, res) => __awaiter(this, void 0, void 0, function* () {
         const startPref = Date.now();
         let isPage = false;
@@ -144,8 +185,14 @@ function startWebflowProxy(config, reloadEmitter) {
             }
         }
         catch (err) {
-            console.log(cli_1.prefixX, "Page not found", req.path);
-            res.send(`${cli_1.prefixX} page not found ${req.path} | status : ${err.message}`);
+            // TODO: If the status code is 401, display webflow's password protected login page that was shipped with that code.
+            if (err.response && err.response.status === 401) {
+                res.status(401).send(err.response.data);
+            }
+            else {
+                console.log(cli_1.prefixX, "Page not found", req.path);
+                res.send(`${(0, strip_ansi_1.default)(cli_1.prefixX)} page not found ${req.path} | status : ${err.message}`);
+            }
         }
         finally {
             const endPref = Date.now();
