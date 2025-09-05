@@ -53,6 +53,17 @@ const configZod = zod_1.z
     ])
         .default([])
         .transform((val) => (typeof val === "string" ? [val] : val)),
+    watchList: zod_1.z
+        .union([
+        zod_1.z.string({
+            invalid_type_error: "❌ watch: must be a string or an array of strings",
+        }),
+        zod_1.z.array(zod_1.z.string({
+            invalid_type_error: "❌ watch: array elements must be strings",
+        })),
+    ])
+        .default(["./src"])
+        .transform((val) => (typeof val === "string" ? [val] : val)),
 }, {
     required_error: "❌ Invalid configuration",
 })

@@ -238,7 +238,7 @@ function devflow(configFilePath) {
         startWebflowProxy(config, reloadEmitter);
         reloadEmitter.emit("script-change", config.source);
         // Watch for changes
-        const watcher = chokidar_1.default.watch(["src/"], {
+        const watcher = chokidar_1.default.watch(config.watchList, {
             ignoreInitial: true,
         });
         watcher.on("all", (_, filePath) => __awaiter(this, void 0, void 0, function* () {

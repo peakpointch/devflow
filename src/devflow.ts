@@ -271,7 +271,7 @@ export default async function devflow(configFilePath: string) {
   reloadEmitter.emit("script-change", config.source);
 
   // Watch for changes
-  const watcher = chokidar.watch(["src/"], {
+  const watcher = chokidar.watch(config.watchList, {
     ignoreInitial: true,
   });
   watcher.on("all", async (_, filePath) => {
