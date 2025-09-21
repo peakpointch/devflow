@@ -216,6 +216,7 @@ function startWebflowProxy(
               `<script\\b[^>]*(?:${config.scriptAttribute.join("|")}(?: {1}|="))\\b[^>]*>([\\s\\S]*?)<\\/script>`,
               "mg",
             ),
+            "",
           );
         }
         scriptsRemovedLog = `Scripts removed ${config.scriptAttribute.length}/${config.scriptAttribute.length}`;

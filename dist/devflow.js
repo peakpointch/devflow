@@ -191,7 +191,7 @@ function startWebflowProxy(config, reloadEmitter) {
                     ? config.scriptAttribute
                     : [config.scriptAttribute];
                 if (config.scriptAttribute.length) {
-                    dataHtml = dataHtml.replace(new RegExp(`<script\\b[^>]*(?:${config.scriptAttribute.join("|")}(?: {1}|="))\\b[^>]*>([\\s\\S]*?)<\\/script>`, "mg"));
+                    dataHtml = dataHtml.replace(new RegExp(`<script\\b[^>]*(?:${config.scriptAttribute.join("|")}(?: {1}|="))\\b[^>]*>([\\s\\S]*?)<\\/script>`, "mg"), "");
                 }
                 scriptsRemovedLog = `Scripts removed ${config.scriptAttribute.length}/${config.scriptAttribute.length}`;
                 res.send(dataHtml.replace("</body>", `${scripts}</body>`));
