@@ -1,6 +1,6 @@
 {
   "name": "devflow",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "xAtom fork build tool - Supercharge Your Webflow Creations into Dynamic Web Apps",
   "main": "./dist/index.js",
   "source": "./src/index.ts",
