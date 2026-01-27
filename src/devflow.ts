@@ -11,11 +11,12 @@ import parseConfig, { DevflowConfig } from "./parse-config";
 import chalk from "chalk";
 import { prefixX } from "./cli";
 import stripAnsi from "strip-ansi";
+import { processHTML } from "./helpers/replaceScripts";
 
 /**
  * Custom routes that are not mirrored from devflow.
  */
-const routes = {
+export const routes = {
   /**
    *
    */
@@ -47,44 +48,6 @@ async function buildApp(config: DevflowConfig): Promise<void> {
   } catch (err: any) {
     console.error(prefixX, "Build failed:", err.message);
   }
-}
-
-function getReloadScript(config: DevflowConfig): string {
-  return `<script>
-  if ("WebSocket" in window) {
-    (function () {
-      const devflowLivereloadURL =
-        "ws://localhost:${config.port}${routes.livereload}";
-      const socket = new WebSocket(devflowLivereloadURL);
-      socket.onmessage = function (event) {
-        if (event.data === "reload") {
-          window.location.reload();
-        } else if (event.data === "reload-css"){
-          const stylesheets = document.querySelectorAll('link[rel="stylesheet"][data-dyn-css="true"]');
-          stylesheets.forEach((sheet) => {
-            const url = new URL(sheet.href);
-            url.searchParams.set("t", Date.now().toString());
-            sheet.href = url.toString();
-          });
-        } else console.log(event);
-      };
-    })();
-  }
-  </script>`;
-}
-
-function getScripts(config: DevflowConfig): string {
-  const scripts = [
-    getReloadScript(config),
-    config.scriptList.map(
-      (script) => `<script src="${routes.dist}/${script}"></script>`,
-    ),
-  ];
-  return scripts.flat().join("");
-}
-
-function getStylesheets(config: DevflowConfig): string {
-  return [].flat().join("");
 }
 
 function routeWfAuth(
@@ -158,20 +121,25 @@ function startWebflowProxy(
   app.use(express.urlencoded({ extended: true }));
   app.use(express.json());
 
-  wsInstance.app.ws(routes.livereload, () => {
-    console.log(prefixX, "Auto Reload connection established");
-  });
+  if (config.livereload) {
+    wsInstance.app.ws(routes.livereload, () => {
+      console.log(prefixX, "Auto Reload connection established");
+    });
+  }
 
   reloadEmitter.on("script-change", () => {
-    wsInstance.getWss().clients.forEach((client) => client.send("reload"));
+    wsInstance
+      .getWss()
+      .clients.forEach((client) => config.livereload && client.send("reload"));
   });
 
   reloadEmitter.on("styles-change", () => {
-    wsInstance.getWss().clients.forEach((client) => client.send("reload-css"));
+    wsInstance
+      .getWss()
+      .clients.forEach(
+        (client) => config.livereload && client.send("reload-css"),
+      );
   });
-
-  const scripts = getScripts(config);
-  const stylesheets = getStylesheets(config);
 
   routeWfAuth(app, config);
 
@@ -207,20 +175,11 @@ function startWebflowProxy(
 
       if (type && type.includes("text/html")) {
         isPage = true;
-        config.scriptAttribute = Array.isArray(config.scriptAttribute)
-          ? config.scriptAttribute
-          : [config.scriptAttribute];
-        if (config.scriptAttribute.length) {
-          dataHtml = dataHtml.replace(
-            new RegExp(
-              `<script\\b[^>]*(?:${config.scriptAttribute.join("|")}(?: {1}|="))\\b[^>]*>([\\s\\S]*?)<\\/script>`,
-              "mg",
-            ),
-            "",
-          );
-        }
-        scriptsRemovedLog = `Scripts removed ${config.scriptAttribute.length}/${config.scriptAttribute.length}`;
-        res.send(dataHtml.replace("</body>", `${scripts}</body>`));
+
+        const result = processHTML(dataHtml, config);
+
+        scriptsRemovedLog = `Scripts removed ${result.removedCount}/${config.scriptAttribute.length}`;
+        res.send(result.html);
       } else {
         res.send(_res.data);
       }

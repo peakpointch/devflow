@@ -18,6 +18,11 @@ const configZod = z
           invalid_type_error: "❌ port: Invalid port",
         })
         .default(3015),
+      livereload: z
+        .boolean({
+          invalid_type_error: "❌ port: Invalid port",
+        })
+        .default(true),
       source: z
         .union([
           z.string({

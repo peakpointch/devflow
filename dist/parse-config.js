@@ -23,6 +23,11 @@ const configZod = zod_1.z
         invalid_type_error: "❌ port: Invalid port",
     })
         .default(3015),
+    livereload: zod_1.z
+        .boolean({
+        invalid_type_error: "❌ port: Invalid port",
+    })
+        .default(true),
     source: zod_1.z
         .union([
         zod_1.z.string({

@@ -12,6 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.routes = void 0;
 exports.default = devflow;
 const esbuild_1 = require("esbuild");
 const chokidar_1 = __importDefault(require("chokidar"));
@@ -26,10 +27,11 @@ const parse_config_1 = __importDefault(require("./parse-config"));
 const chalk_1 = __importDefault(require("chalk"));
 const cli_1 = require("./cli");
 const strip_ansi_1 = __importDefault(require("strip-ansi"));
+const replaceScripts_1 = require("./helpers/replaceScripts");
 /**
  * Custom routes that are not mirrored from devflow.
  */
-const routes = {
+exports.routes = {
     /**
      *
      */
@@ -62,39 +64,6 @@ function buildApp(config) {
             console.error(cli_1.prefixX, "Build failed:", err.message);
         }
     });
-}
-function getReloadScript(config) {
-    return `<script>
-  if ("WebSocket" in window) {
-    (function () {
-      const devflowLivereloadURL =
-        "ws://localhost:${config.port}${routes.livereload}";
-      const socket = new WebSocket(devflowLivereloadURL);
-      socket.onmessage = function (event) {
-        if (event.data === "reload") {
-          window.location.reload();
-        } else if (event.data === "reload-css"){
-          const stylesheets = document.querySelectorAll('link[rel="stylesheet"][data-dyn-css="true"]');
-          stylesheets.forEach((sheet) => {
-            const url = new URL(sheet.href);
-            url.searchParams.set("t", Date.now().toString());
-            sheet.href = url.toString();
-          });
-        } else console.log(event);
-      };
-    })();
-  }
-  </script>`;
-}
-function getScripts(config) {
-    const scripts = [
-        getReloadScript(config),
-        config.scriptList.map((script) => `<script src="${routes.dist}/${script}"></script>`),
-    ];
-    return scripts.flat().join("");
-}
-function getStylesheets(config) {
-    return [].flat().join("");
 }
 function routeWfAuth(app, config) {
     app.post("/.wf_auth", (req, res) => __awaiter(this, void 0, void 0, function* () {
@@ -146,20 +115,24 @@ function startWebflowProxy(config, reloadEmitter) {
         origin: [/.*/],
     }));
     app.use((0, cookie_parser_1.default)());
-    app.use(routes.dist, express_1.default.static(path_1.default.resolve(config.dist)));
+    app.use(exports.routes.dist, express_1.default.static(path_1.default.resolve(config.dist)));
     app.use(express_1.default.urlencoded({ extended: true }));
     app.use(express_1.default.json());
-    wsInstance.app.ws(routes.livereload, () => {
-        console.log(cli_1.prefixX, "Auto Reload connection established");
-    });
+    if (config.livereload) {
+        wsInstance.app.ws(exports.routes.livereload, () => {
+            console.log(cli_1.prefixX, "Auto Reload connection established");
+        });
+    }
     reloadEmitter.on("script-change", () => {
-        wsInstance.getWss().clients.forEach((client) => client.send("reload"));
+        wsInstance
+            .getWss()
+            .clients.forEach((client) => config.livereload && client.send("reload"));
     });
     reloadEmitter.on("styles-change", () => {
-        wsInstance.getWss().clients.forEach((client) => client.send("reload-css"));
+        wsInstance
+            .getWss()
+            .clients.forEach((client) => config.livereload && client.send("reload-css"));
     });
-    const scripts = getScripts(config);
-    const stylesheets = getStylesheets(config);
     routeWfAuth(app, config);
     app.get("*", (req, res) => __awaiter(this, void 0, void 0, function* () {
         const startPref = Date.now();
@@ -187,14 +160,9 @@ function startWebflowProxy(config, reloadEmitter) {
             let dataHtml = _res.data;
             if (type && type.includes("text/html")) {
                 isPage = true;
-                config.scriptAttribute = Array.isArray(config.scriptAttribute)
-                    ? config.scriptAttribute
-                    : [config.scriptAttribute];
-                if (config.scriptAttribute.length) {
-                    dataHtml = dataHtml.replace(new RegExp(`<script\\b[^>]*(?:${config.scriptAttribute.join("|")}(?: {1}|="))\\b[^>]*>([\\s\\S]*?)<\\/script>`, "mg"), "");
-                }
-                scriptsRemovedLog = `Scripts removed ${config.scriptAttribute.length}/${config.scriptAttribute.length}`;
-                res.send(dataHtml.replace("</body>", `${scripts}</body>`));
+                const result = (0, replaceScripts_1.processHTML)(dataHtml, config);
+                scriptsRemovedLog = `Scripts removed ${result.removedCount}/${config.scriptAttribute.length}`;
+                res.send(result.html);
             }
             else {
                 res.send(_res.data);
