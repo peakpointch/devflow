@@ -1,4 +1,4 @@
-import { fileExists } from "./parse-config";
+import { fileExists } from "./config";
 import fs from "fs";
 import path from "path";
 import { prefixX } from "./cli";

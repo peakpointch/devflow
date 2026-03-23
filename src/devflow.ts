@@ -1,16 +1,17 @@
+import axios from "axios";
 import { build } from "esbuild";
+import chalk from "chalk";
 import chokidar from "chokidar";
+import cookieParser from "cookie-parser";
+import cors from "cors";
+import events from "events";
 import express from "express";
 import expressWs from "express-ws";
-import cors from "cors";
-import cookieParser from "cookie-parser";
-import axios from "axios";
 import path from "path";
-import events from "events";
-import parseConfig, { DevflowConfig } from "./parse-config";
-import chalk from "chalk";
-import { prefixX } from "./cli";
 import stripAnsi from "strip-ansi";
+
+import { prefixX } from "./cli";
+import { parseConfig, DevflowConfig } from "./config";
 import { replaceAssets } from "./helpers/assetReplacer";
 
 /**

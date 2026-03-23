@@ -4,7 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.fileExists = void 0;
-exports.default = parseConfig;
+exports.parseConfig = parseConfig;
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const zod_1 = require("zod");
@@ -99,3 +99,4 @@ function parseConfig(configPath) {
     }
     return config.data;
 }
+exports.default = parseConfig;

@@ -1,6 +1,6 @@
 import { build } from "esbuild";
-import parseConfig from "./parse-config";
 import { prefixX } from "./cli";
+import parseConfig from "./config";
 
 export default async function builder(configFilePath) {
   try {

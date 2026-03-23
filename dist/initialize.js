@@ -4,7 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = initConfig;
-const parse_config_1 = require("./parse-config");
+const config_1 = require("./config");
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const cli_1 = require("./cli");
@@ -18,7 +18,7 @@ const template = `{
 }
 `;
 function initConfig(filePath) {
-    if ((0, parse_config_1.fileExists)(filePath)) {
+    if ((0, config_1.fileExists)(filePath)) {
         console.log(cli_1.prefixX, `looks like a ${filePath} config file already exists`);
         return;
     }

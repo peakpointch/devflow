@@ -14,19 +14,19 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.routes = void 0;
 exports.default = devflow;
+const axios_1 = __importDefault(require("axios"));
 const esbuild_1 = require("esbuild");
+const chalk_1 = __importDefault(require("chalk"));
 const chokidar_1 = __importDefault(require("chokidar"));
+const cookie_parser_1 = __importDefault(require("cookie-parser"));
+const cors_1 = __importDefault(require("cors"));
+const events_1 = __importDefault(require("events"));
 const express_1 = __importDefault(require("express"));
 const express_ws_1 = __importDefault(require("express-ws"));
-const cors_1 = __importDefault(require("cors"));
-const cookie_parser_1 = __importDefault(require("cookie-parser"));
-const axios_1 = __importDefault(require("axios"));
 const path_1 = __importDefault(require("path"));
-const events_1 = __importDefault(require("events"));
-const parse_config_1 = __importDefault(require("./parse-config"));
-const chalk_1 = __importDefault(require("chalk"));
-const cli_1 = require("./cli");
 const strip_ansi_1 = __importDefault(require("strip-ansi"));
+const cli_1 = require("./cli");
+const config_1 = require("./config");
 const assetReplacer_1 = require("./helpers/assetReplacer");
 /**
  * Custom routes that are not mirrored from devflow.
@@ -197,7 +197,7 @@ function startWebflowProxy(config, reloadEmitter) {
 // -----------------------------
 function devflow(configFilePath) {
     return __awaiter(this, void 0, void 0, function* () {
-        const config = (0, parse_config_1.default)(configFilePath);
+        const config = (0, config_1.parseConfig)(configFilePath);
         const reloadEmitter = new events_1.default.EventEmitter();
         console.log(cli_1.prefixX, "Read Documentation 📚: https://xatom.js.org/");
         // Initial build

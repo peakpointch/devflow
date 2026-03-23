@@ -1,5 +1,5 @@
 import { ExtractedAsset } from "../types/assets";
-import { DevflowConfig } from "../parse-config";
+import { DevflowConfig } from "../config";
 import { routes } from "../devflow";
 
 export function updateAssetUrls(

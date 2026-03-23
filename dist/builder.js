@@ -14,12 +14,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = builder;
 const esbuild_1 = require("esbuild");
-const parse_config_1 = __importDefault(require("./parse-config"));
 const cli_1 = require("./cli");
+const config_1 = __importDefault(require("./config"));
 function builder(configFilePath) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const config = (0, parse_config_1.default)(configFilePath);
+            const config = (0, config_1.default)(configFilePath);
             console.log(cli_1.prefixX, "Building production bundle...");
             yield (0, esbuild_1.build)({
                 entryPoints: config.source,

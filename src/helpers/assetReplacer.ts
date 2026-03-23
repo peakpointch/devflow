@@ -1,4 +1,4 @@
-import { DevflowConfig } from "../parse-config";
+import { DevflowConfig } from "../config";
 import { AssetAttributes } from "../types/assets";
 import { extractAssets } from "./assetParser";
 import { stringifyAssets, updateAssetUrls } from "./assetTransformer";

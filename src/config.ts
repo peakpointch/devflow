@@ -85,7 +85,7 @@ const configZod = z
 
 export type DevflowConfig = z.infer<typeof configZod>;
 
-export default function parseConfig(configPath: string): DevflowConfig {
+export function parseConfig(configPath: string): DevflowConfig {
   if (!fileExists(configPath)) {
     console.warn("⚠️ unable to locate config file:", configPath);
     process.exit(1);
@@ -118,3 +118,5 @@ export default function parseConfig(configPath: string): DevflowConfig {
 
   return config.data;
 }
+
+export default parseConfig;
