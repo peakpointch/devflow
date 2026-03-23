@@ -25,7 +25,7 @@ export const routes = {
   /**
    * Host local files
    */
-  dist: "/__dist",
+  app: "/__app",
 };
 
 // -----------------------------
@@ -118,7 +118,7 @@ function startWebflowProxy(
     }),
   );
   app.use(cookieParser());
-  app.use(routes.dist, express.static(path.resolve(config.dist)));
+  app.use(routes.app, express.static(process.cwd()));
   app.use(express.urlencoded({ extended: true }));
   app.use(express.json());
 

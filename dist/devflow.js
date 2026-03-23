@@ -23,7 +23,6 @@ const cors_1 = __importDefault(require("cors"));
 const events_1 = __importDefault(require("events"));
 const express_1 = __importDefault(require("express"));
 const express_ws_1 = __importDefault(require("express-ws"));
-const path_1 = __importDefault(require("path"));
 const strip_ansi_1 = __importDefault(require("strip-ansi"));
 const cli_1 = require("./cli");
 const config_1 = require("./config");
@@ -39,7 +38,7 @@ exports.routes = {
     /**
      * Host local files
      */
-    dist: "/__dist",
+    app: "/__app",
 };
 // -----------------------------
 // Build app with esbuild
@@ -115,7 +114,7 @@ function startWebflowProxy(config, reloadEmitter) {
         origin: [/.*/],
     }));
     app.use((0, cookie_parser_1.default)());
-    app.use(exports.routes.dist, express_1.default.static(path_1.default.resolve(config.dist)));
+    app.use(exports.routes.app, express_1.default.static(process.cwd()));
     app.use(express_1.default.urlencoded({ extended: true }));
     app.use(express_1.default.json());
     if (config.livereload) {

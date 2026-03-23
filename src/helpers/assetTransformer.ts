@@ -11,7 +11,8 @@ export function updateAssetUrls(
     if (!isMatched) return asset;
 
     const newAttrs = { ...asset.attrs };
-    const localUrl = `${routes.dist}/${asset.filename}`;
+    const localUrl =
+      `${routes.app}/${asset.filePath}/${asset.fileName}`.replace(/\/+/g, "/");
 
     if (asset.type === "script") {
       newAttrs.src = localUrl;

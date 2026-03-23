@@ -5,11 +5,8 @@ exports.stringifyAssets = stringifyAssets;
 const devflow_1 = require("../devflow");
 function updateAssetUrls(assets, config) {
     return assets.map((asset) => {
-        const isMatched = config.scriptList.includes(asset.filename);
-        if (!isMatched)
-            return asset;
         const newAttrs = Object.assign({}, asset.attrs);
-        const localUrl = `${devflow_1.routes.dist}/${asset.filename}`;
+        const localUrl = `${devflow_1.routes.app}/${asset.filePath}/${asset.fileName}`.replace(/\/+/g, "/");
         if (asset.type === "script") {
             newAttrs.src = localUrl;
         }
