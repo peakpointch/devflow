@@ -39,9 +39,6 @@ const configZod = zod_1.z
     ])
         .default(["./src"])
         .transform((val) => (typeof val === "string" ? [val] : val)),
-    scriptList: zod_1.z
-        .array(zod_1.z.string())
-        .min(1, "minimum one dist file must be added"),
     dist: zod_1.z
         .string({
         invalid_type_error: "❌ dist: Invalid dist path, example ./dist",

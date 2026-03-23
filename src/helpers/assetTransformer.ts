@@ -7,9 +7,6 @@ export function updateAssetUrls(
   config: DevflowConfig,
 ): ExtractedAsset[] {
   return assets.map((asset) => {
-    const isMatched = config.scriptList.includes(asset.filename);
-    if (!isMatched) return asset;
-
     const newAttrs = { ...asset.attrs };
     const localUrl =
       `${routes.app}/${asset.filePath}/${asset.fileName}`.replace(/\/+/g, "/");
