@@ -27,7 +27,7 @@ const parse_config_1 = __importDefault(require("./parse-config"));
 const chalk_1 = __importDefault(require("chalk"));
 const cli_1 = require("./cli");
 const strip_ansi_1 = __importDefault(require("strip-ansi"));
-const replaceScripts_1 = require("./helpers/replaceScripts");
+const assetReplacer_1 = require("./helpers/assetReplacer");
 /**
  * Custom routes that are not mirrored from devflow.
  */
@@ -160,7 +160,7 @@ function startWebflowProxy(config, reloadEmitter) {
             let dataHtml = _res.data;
             if (type && type.includes("text/html")) {
                 isPage = true;
-                const result = (0, replaceScripts_1.processHTML)(dataHtml, config);
+                const result = (0, assetReplacer_1.replaceAssets)(dataHtml, config);
                 scriptsRemovedLog = `Scripts removed ${result.removedCount}/${config.scriptAttribute.length}`;
                 res.send(result.html);
             }

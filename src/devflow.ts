@@ -11,7 +11,7 @@ import parseConfig, { DevflowConfig } from "./parse-config";
 import chalk from "chalk";
 import { prefixX } from "./cli";
 import stripAnsi from "strip-ansi";
-import { processHTML } from "./helpers/replaceScripts";
+import { replaceAssets } from "./helpers/assetReplacer";
 
 /**
  * Custom routes that are not mirrored from devflow.
@@ -176,7 +176,7 @@ function startWebflowProxy(
       if (type && type.includes("text/html")) {
         isPage = true;
 
-        const result = processHTML(dataHtml, config);
+        const result = replaceAssets(dataHtml, config);
 
         scriptsRemovedLog = `Scripts removed ${result.removedCount}/${config.scriptAttribute.length}`;
         res.send(result.html);
