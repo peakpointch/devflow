@@ -1,38 +1,11 @@
 <!doctype html>
-<html>
+<html class="bg-zinc-900 text-white">
   <head>
-    <style>
-      body {
-        width: 180px;
-        padding: 10px;
-        font-family: sans-serif;
-      }
-
-      input {
-        margin-top: 5px;
-        width: 100%;
-        max-width: 100%;
-        min-width: 0px;
-      }
-
-      button {
-        width: 100%;
-        margin-top: 10px;
-        cursor: pointer;
-        background: #4353ff;
-        color: white;
-        border: none;
-        padding: 5px;
-        border-radius: 4px;
-      }
-    </style>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="./dist/main.css" />
   </head>
-  <body>
-    <div>
-      <strong>Devflow Port</strong>
-      <input type="number" id="port" value="3000" />
-      <button id="save">Save & Connect</button>
-      <script src="./dist/popup.js"></script>
-    </div>
+  <body class="p-4 antialiased">
+    <div id="app"></div>
+    <script src="./dist/popup.js"></script>
   </body>
 </html>

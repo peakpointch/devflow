@@ -16,9 +16,16 @@ function initialize(): void {
     });
 
     chrome.runtime.onMessage.addListener((message) => {
-      if (message.type === "CONNECT_LIVERELOAD") {
-        console.log(`[Devflow] Connecting to new port: ${message.port}`);
-        setupAndStart(message.port);
+      if (message.type === "TOGGLE_LIVERELOAD") {
+        const lr = Livereload.getInstance();
+
+        if (message.enabled) {
+          console.log(`[Devflow] Connecting to port: ${message.port}`);
+          setupAndStart(message.port);
+        } else {
+          console.log(`[Devflow] Disconnecting...`);
+          lr.stop();
+        }
       }
     });
   } else if (wf.env === "development") {
