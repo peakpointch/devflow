@@ -1,6 +1,6 @@
 (() => {
   // <define:__manifest__>
-  var define_manifest_default = { name: "Devflow", version: "1.0.0", description: "Hot-reloads CSS in the Webflow Designer", permissions: ["storage"], action: { default_popup: "popup.html" }, content_scripts: [{ matches: ["https://*.design.webflow.com/*"], js: ["./dist/client.js"], run_at: "document_idle" }], manifest_version: 3 };
+  var define_manifest_default = { name: "Devflow", version: "1.2.0", description: "Hot-reloads CSS in the Webflow Designer", permissions: ["storage"], action: { default_popup: "popup.html" }, content_scripts: [{ matches: ["https://*.design.webflow.com/*"], js: ["./dist/client.js"], run_at: "document_idle" }], manifest_version: 3 };
 
   // node_modules/@vue/shared/dist/shared.esm-bundler.js
   // @__NO_SIDE_EFFECTS__
@@ -7068,7 +7068,7 @@ Component that was made reactive: `,
     initDev();
   }
 
-  // sfc-script:C:\Users\lmgraf\code\peakpoint\tools\devflow\src\extension\Popup.vue?type=script
+  // sfc-script:/home/lukas/peakpoint/tools/devflow/src/extension/Popup.vue?type=script
   var Popup_default = {
     __name: "Popup",
     setup(__props, { expose: __expose }) {
@@ -7110,7 +7110,7 @@ Component that was made reactive: `,
     }
   };
 
-  // sfc-template:C:\Users\lmgraf\code\peakpoint\tools\devflow\src\extension\Popup.vue?type=template
+  // sfc-template:/home/lukas/peakpoint/tools/devflow/src/extension/Popup.vue?type=template
   var _hoisted_1 = { class: "flex flex-col gap-4 w-[220px] p-4 bg-zinc-900 text-zinc-100 antialiased border border-zinc-800 rounded-lg" };
   var _hoisted_2 = { class: "flex items-center justify-between" };
   var _hoisted_3 = { class: "flex items-center gap-2" };
@@ -7190,7 +7190,7 @@ Component that was made reactive: `,
 
   // src/extension/Popup.vue
   Popup_default.render = render;
-  Popup_default.__file = "src\\extension\\Popup.vue";
+  Popup_default.__file = "src/extension/Popup.vue";
   var Popup_default2 = Popup_default;
 
   // src/extension/popup.ts

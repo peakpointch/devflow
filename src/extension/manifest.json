@@ -1,6 +1,6 @@
 {
   "name": "Devflow",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "Hot-reloads CSS in the Webflow Designer",
   "permissions": ["storage"],
   "action": {

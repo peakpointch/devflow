@@ -1,10 +1,10 @@
 {
   "name": "devflow",
-  "version": "1.1.0",
-  "description": "xAtom fork build tool - Supercharge Your Webflow Creations into Dynamic Web Apps",
+  "version": "1.2.0",
+  "description": "A high-performance build system and local dev-server with livereload for custom-code-heavy Webflow projects.",
   "main": "./dist/index.js",
   "source": "./src/index.ts",
-  "author": "xatomdev, lmgraf",
+  "author": "Virat Patel, Lukas Manuel Graf",
   "license": "MIT",
   "private": false,
   "bin": {
