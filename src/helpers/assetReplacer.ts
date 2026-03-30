@@ -2,18 +2,11 @@ import { DevflowConfig } from "../config";
 import { AssetAttributes } from "../types/assets";
 import { extractAssets } from "./assetParser";
 import { stringifyAssets, updateAssetUrls } from "./assetTransformer";
-import { getReloadScript } from "./livereload";
+import { routes } from "./routes";
 
-/**
- * Generic parser for HTML attributes
- */
-export function parseAttributes(attrString: string): AssetAttributes {
-  const attrs: AssetAttributes = {};
-  attrString.replace(/([^\s=]+)(?:="([^"]*)")?/g, (_, name, value) => {
-    attrs[name] = value ?? true;
-    return "";
-  });
-  return attrs;
+export function getReloadScript(config: DevflowConfig): string {
+  if (!config.livereload) return "";
+  return `<script src="${routes.devflow}/src/extension/dist/client.js" defer></script>`;
 }
 
 export function replaceAssets(html: string, config: DevflowConfig) {

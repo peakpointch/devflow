@@ -13,20 +13,7 @@ import stripAnsi from "strip-ansi";
 import { prefixX } from "./cli";
 import { parseConfig, DevflowConfig } from "./config";
 import { replaceAssets } from "./helpers/assetReplacer";
-
-/**
- * Custom routes that are not mirrored from devflow.
- */
-export const routes = {
-  /**
-   *
-   */
-  livereload: "/__livereload",
-  /**
-   * Host local files
-   */
-  app: "/__app",
-};
+import { routes } from "./helpers/routes";
 
 // -----------------------------
 // Build app with esbuild
@@ -119,6 +106,7 @@ function startWebflowProxy(
   );
   app.use(cookieParser());
   app.use(routes.app, express.static(process.cwd()));
+  app.use(routes.devflow, express.static(path.resolve(__dirname, "..")));
   app.use(express.urlencoded({ extended: true }));
   app.use(express.json());
 

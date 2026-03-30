@@ -1,0 +1,17 @@
+{
+  "name": "Devflow",
+  "version": "1.0.0",
+  "description": "Hot-reloads CSS in the Webflow Designer",
+  "permissions": ["storage"],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://*.design.webflow.com/*"],
+      "js": ["./dist/client.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "manifest_version": 3
+}

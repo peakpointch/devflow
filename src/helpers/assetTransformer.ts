@@ -1,6 +1,6 @@
 import { ExtractedAsset } from "../types/assets";
 import { DevflowConfig } from "../config";
-import { routes } from "../devflow";
+import { routes } from "./routes";
 
 export function updateAssetUrls(
   assets: ExtractedAsset[],

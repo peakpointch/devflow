@@ -1,0 +1,38 @@
+<!doctype html>
+<html>
+  <head>
+    <style>
+      body {
+        width: 180px;
+        padding: 10px;
+        font-family: sans-serif;
+      }
+
+      input {
+        margin-top: 5px;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0px;
+      }
+
+      button {
+        width: 100%;
+        margin-top: 10px;
+        cursor: pointer;
+        background: #4353ff;
+        color: white;
+        border: none;
+        padding: 5px;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div>
+      <strong>Devflow Port</strong>
+      <input type="number" id="port" value="3000" />
+      <button id="save">Save & Connect hello</button>
+      <script src="./dist/popup.js"></script>
+    </div>
+  </body>
+</html>

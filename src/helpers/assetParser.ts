@@ -86,5 +86,6 @@ export function extractAssets(
       }
     }
   }
+
   return assets;
 }

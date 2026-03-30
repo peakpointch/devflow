@@ -1,223 +1,215 @@
-"use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
+var __create = Object.create;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var devflow_exports = {};
+__export(devflow_exports, {
+  default: () => devflow
+});
+module.exports = __toCommonJS(devflow_exports);
+var import_axios = __toESM(require("axios"));
+var import_esbuild = require("esbuild");
+var import_chalk = __toESM(require("chalk"));
+var import_chokidar = __toESM(require("chokidar"));
+var import_cookie_parser = __toESM(require("cookie-parser"));
+var import_cors = __toESM(require("cors"));
+var import_events = __toESM(require("events"));
+var import_express = __toESM(require("express"));
+var import_express_ws = __toESM(require("express-ws"));
+var import_path = __toESM(require("path"));
+var import_strip_ansi = __toESM(require("strip-ansi"));
+var import_cli = require("./cli");
+var import_config = require("./config");
+var import_assetReplacer = require("./helpers/assetReplacer");
+var import_routes = require("./helpers/routes");
+async function buildApp(config) {
+  try {
+    await (0, import_esbuild.build)({
+      entryPoints: config.source,
+      bundle: true,
+      outdir: `${config.dist}`,
+      sourcemap: true,
+      minify: false,
+      format: "iife",
+      target: ["es2020"],
+      platform: "browser",
+      external: ["@vime/core"]
     });
-};
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.routes = void 0;
-exports.default = devflow;
-const axios_1 = __importDefault(require("axios"));
-const esbuild_1 = require("esbuild");
-const chalk_1 = __importDefault(require("chalk"));
-const chokidar_1 = __importDefault(require("chokidar"));
-const cookie_parser_1 = __importDefault(require("cookie-parser"));
-const cors_1 = __importDefault(require("cors"));
-const events_1 = __importDefault(require("events"));
-const express_1 = __importDefault(require("express"));
-const express_ws_1 = __importDefault(require("express-ws"));
-const strip_ansi_1 = __importDefault(require("strip-ansi"));
-const cli_1 = require("./cli");
-const config_1 = require("./config");
-const assetReplacer_1 = require("./helpers/assetReplacer");
-/**
- * Custom routes that are not mirrored from devflow.
- */
-exports.routes = {
-    /**
-     *
-     */
-    livereload: "/__livereload",
-    /**
-     * Host local files
-     */
-    app: "/__app",
-};
-// -----------------------------
-// Build app with esbuild
-// -----------------------------
-function buildApp(config) {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            yield (0, esbuild_1.build)({
-                entryPoints: config.source,
-                bundle: true,
-                outdir: `${config.dist}`,
-                sourcemap: true,
-                minify: false,
-                format: "iife",
-                target: ["es2020"],
-                platform: "browser",
-                external: ["@vime/core"],
-            });
-            console.log(cli_1.prefixX, "Build done");
-        }
-        catch (err) {
-            console.error(cli_1.prefixX, "Build failed:", err.message);
-        }
-    });
+    console.log(import_cli.prefixX, "Build done");
+  } catch (err) {
+    console.error(import_cli.prefixX, "Build failed:", err.message);
+  }
 }
 function routeWfAuth(app, config) {
-    app.post("/.wf_auth", (req, res) => __awaiter(this, void 0, void 0, function* () {
-        var _a, _b, _c;
-        try {
-            const body = new URLSearchParams(req.body).toString();
-            const _res = yield axios_1.default.post(`https://${config.webflowSubdomain}.webflow.io/.wf_auth`, body, {
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded",
-                    "User-Agent": req.headers["user-agent"] || "",
-                    Cookie: req.headers.cookie || "",
-                    Origin: `https://${config.webflowSubdomain}.webflow.io`,
-                    Referer: `https://${config.webflowSubdomain}.webflow.io${((_a = req.headers.referer) === null || _a === void 0 ? void 0 : _a.replace(/^https?:\/\/[^/]+/, "")) || "/"}`,
-                    Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-                    "Accept-Language": req.headers["accept-language"] || "en-US,en;q=0.9",
-                    "Cache-Control": "no-cache",
-                    Pragma: "no-cache",
-                },
-                maxRedirects: 0, // don't auto-follow
-                validateStatus: () => true, // let us handle 302/401/etc.
-                withCredentials: true,
-            });
-            // Forward cookies
-            if (_res.headers["set-cookie"]) {
-                res.setHeader("set-cookie", _res.headers["set-cookie"]);
-            }
-            // Forward redirect if present
-            if (_res.status >= 300 && _res.status < 400 && _res.headers.location) {
-                return res.redirect(_res.status, _res.headers.location);
-            }
-            res.status(_res.status).send(_res.data);
+  app.post("/.wf_auth", async (req, res) => {
+    var _a, _b, _c;
+    try {
+      const body = new URLSearchParams(req.body).toString();
+      const _res = await import_axios.default.post(
+        `https://${config.webflowSubdomain}.webflow.io/.wf_auth`,
+        body,
+        {
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "User-Agent": req.headers["user-agent"] || "",
+            Cookie: req.headers.cookie || "",
+            Origin: `https://${config.webflowSubdomain}.webflow.io`,
+            Referer: `https://${config.webflowSubdomain}.webflow.io${((_a = req.headers.referer) == null ? void 0 : _a.replace(/^https?:\/\/[^/]+/, "")) || "/"}`,
+            Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+            "Accept-Language": req.headers["accept-language"] || "en-US,en;q=0.9",
+            "Cache-Control": "no-cache",
+            Pragma: "no-cache"
+          },
+          maxRedirects: 0,
+          // don't auto-follow
+          validateStatus: () => true,
+          // let us handle 302/401/etc.
+          withCredentials: true
         }
-        catch (err) {
-            console.error("Error proxying /.wf_auth", err.message);
-            res
-                .status(((_b = err.response) === null || _b === void 0 ? void 0 : _b.status) || 500)
-                .send(((_c = err.response) === null || _c === void 0 ? void 0 : _c.data) || "Auth error");
-        }
-    }));
-}
-// -----------------------------
-// Proxy server
-// -----------------------------
-function startWebflowProxy(config, reloadEmitter) {
-    const app = (0, express_1.default)();
-    const wsInstance = (0, express_ws_1.default)(app); // typed wrapper
-    app.use((0, cors_1.default)({
-        credentials: true,
-        origin: [/.*/],
-    }));
-    app.use((0, cookie_parser_1.default)());
-    app.use(exports.routes.app, express_1.default.static(process.cwd()));
-    app.use(express_1.default.urlencoded({ extended: true }));
-    app.use(express_1.default.json());
-    if (config.livereload) {
-        wsInstance.app.ws(exports.routes.livereload, () => {
-            console.log(cli_1.prefixX, "Auto Reload connection established");
-        });
+      );
+      if (_res.headers["set-cookie"]) {
+        res.setHeader("set-cookie", _res.headers["set-cookie"]);
+      }
+      if (_res.status >= 300 && _res.status < 400 && _res.headers.location) {
+        return res.redirect(_res.status, _res.headers.location);
+      }
+      res.status(_res.status).send(_res.data);
+    } catch (err) {
+      console.error("Error proxying /.wf_auth", err.message);
+      res.status(((_b = err.response) == null ? void 0 : _b.status) || 500).send(((_c = err.response) == null ? void 0 : _c.data) || "Auth error");
     }
-    reloadEmitter.on("script-change", () => {
-        wsInstance
-            .getWss()
-            .clients.forEach((client) => config.livereload && client.send("reload"));
-    });
-    reloadEmitter.on("styles-change", () => {
-        wsInstance
-            .getWss()
-            .clients.forEach((client) => config.livereload && client.send("reload-css"));
-    });
-    routeWfAuth(app, config);
-    app.get("*", (req, res) => __awaiter(this, void 0, void 0, function* () {
-        const startPref = Date.now();
-        let isPage = false;
-        let scriptsRemovedLog = "";
-        try {
-            // Skip devtools
-            if (req.url.includes("devtools"))
-                return;
-            const _res = yield axios_1.default.get(`https://${config.webflowSubdomain}.webflow.io${req.url}`, {
-                headers: {
-                    Referer: `https://${config.webflowSubdomain}.webflow.io${req.path}`,
-                    "Referrer-Policy": "strict-origin-when-cross-origin",
-                    "User-Agent": req.headers["user-agent"] || "",
-                    accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-                    "accept-language": "en-US,en;q=0.9,it;q=0.8",
-                    "cache-control": "no-cache",
-                    pragma: "no-cache",
-                    "upgrade-insecure-requests": "1",
-                    Cookie: req.headers.cookie || "",
-                },
-                withCredentials: true,
-            });
-            const type = _res.headers["content-type"] || _res.headers["Content-Type"];
-            let dataHtml = _res.data;
-            if (type && type.includes("text/html")) {
-                isPage = true;
-                const result = (0, assetReplacer_1.replaceAssets)(dataHtml, config);
-                scriptsRemovedLog = `Scripts removed ${result.removedCount}/${config.scriptAttribute.length}`;
-                res.send(result.html);
-            }
-            else {
-                res.send(_res.data);
-            }
-        }
-        catch (err) {
-            // TODO: If the status code is 401, display webflow's password protected login page that was shipped with that code.
-            if (err.response && err.response.status === 401) {
-                res.status(401).send(err.response.data);
-            }
-            else {
-                console.log(cli_1.prefixX, "Page not found", req.path);
-                res.send(`${(0, strip_ansi_1.default)(cli_1.prefixX)} page not found ${req.path} | status : ${err.message}`);
-            }
-        }
-        finally {
-            const endPref = Date.now();
-            if (isPage) {
-                console.log(cli_1.prefixX, "Page", chalk_1.default.cyan(req.url), `took ${endPref - startPref}ms to fetch`);
-            }
-            if (scriptsRemovedLog) {
-                console.log(cli_1.prefixX, scriptsRemovedLog);
-            }
-        }
-    }));
-    app.listen(config.port, () => {
-        console.log(cli_1.prefixX, `local server http://localhost:${config.port}`);
-    });
+  });
 }
-// -----------------------------
-// Start Devflow
-// -----------------------------
-function devflow(configFilePath) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const config = (0, config_1.parseConfig)(configFilePath);
-        const reloadEmitter = new events_1.default.EventEmitter();
-        console.log(cli_1.prefixX, "Read Documentation 📚: https://xatom.js.org/");
-        // Initial build
-        yield buildApp(config);
-        // Start webflow proxy server, mirroring the .webflow.io staging domain
-        startWebflowProxy(config, reloadEmitter);
-        reloadEmitter.emit("script-change", config.source);
-        // Watch for changes
-        const watcher = chokidar_1.default.watch(config.watchList, {
-            ignoreInitial: true,
-        });
-        watcher.on("all", (_, filePath) => __awaiter(this, void 0, void 0, function* () {
-            if (/\.(js|ts)$/.test(filePath)) {
-                console.log(cli_1.prefixX, "File change detected, rebuilding...");
-                yield buildApp(config);
-                reloadEmitter.emit("script-change", config.source);
-            }
-            else if (/\.(css)$/.test(filePath)) {
-                console.log(cli_1.prefixX, "CSS change detected, reloading stylesheets...");
-                reloadEmitter.emit("styles-change", config.source);
-            }
-        }));
+function startWebflowProxy(config, reloadEmitter) {
+  const app = (0, import_express.default)();
+  const wsInstance = (0, import_express_ws.default)(app);
+  app.use(
+    (0, import_cors.default)({
+      credentials: true,
+      origin: [/.*/]
+    })
+  );
+  app.use((0, import_cookie_parser.default)());
+  app.use(import_routes.routes.app, import_express.default.static(process.cwd()));
+  app.use(import_routes.routes.devflow, import_express.default.static(import_path.default.resolve(__dirname, "..")));
+  app.use(import_express.default.urlencoded({ extended: true }));
+  app.use(import_express.default.json());
+  if (config.livereload) {
+    wsInstance.app.ws(import_routes.routes.livereload, () => {
+      console.log(import_cli.prefixX, "Auto Reload connection established");
     });
+  }
+  reloadEmitter.on("script-change", () => {
+    wsInstance.getWss().clients.forEach((client) => config.livereload && client.send("reload"));
+  });
+  reloadEmitter.on("styles-change", () => {
+    wsInstance.getWss().clients.forEach(
+      (client) => config.livereload && client.send("reload-css")
+    );
+  });
+  routeWfAuth(app, config);
+  app.get("*", async (req, res) => {
+    const startPref = Date.now();
+    let isPage = false;
+    let scriptsRemovedLog = "";
+    try {
+      if (req.url.includes("devtools")) return;
+      const _res = await import_axios.default.get(
+        `https://${config.webflowSubdomain}.webflow.io${req.url}`,
+        {
+          headers: {
+            Referer: `https://${config.webflowSubdomain}.webflow.io${req.path}`,
+            "Referrer-Policy": "strict-origin-when-cross-origin",
+            "User-Agent": req.headers["user-agent"] || "",
+            accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+            "accept-language": "en-US,en;q=0.9,it;q=0.8",
+            "cache-control": "no-cache",
+            pragma: "no-cache",
+            "upgrade-insecure-requests": "1",
+            Cookie: req.headers.cookie || ""
+          },
+          withCredentials: true
+        }
+      );
+      const type = _res.headers["content-type"] || _res.headers["Content-Type"];
+      let dataHtml = _res.data;
+      if (type && type.includes("text/html")) {
+        isPage = true;
+        const result = (0, import_assetReplacer.replaceAssets)(dataHtml, config);
+        scriptsRemovedLog = `Scripts removed ${result.removedCount}/${config.scriptAttribute.length}`;
+        res.send(result.html);
+      } else {
+        res.send(_res.data);
+      }
+    } catch (err) {
+      if (err.response && err.response.status === 401) {
+        res.status(401).send(err.response.data);
+      } else {
+        console.log(import_cli.prefixX, "Page not found", req.path);
+        res.send(
+          `${(0, import_strip_ansi.default)(import_cli.prefixX)} page not found ${req.path} | status : ${err.message}`
+        );
+      }
+    } finally {
+      const endPref = Date.now();
+      if (isPage) {
+        console.log(
+          import_cli.prefixX,
+          "Page",
+          import_chalk.default.cyan(req.url),
+          `took ${endPref - startPref}ms to fetch`
+        );
+      }
+      if (scriptsRemovedLog) {
+        console.log(import_cli.prefixX, scriptsRemovedLog);
+      }
+    }
+  });
+  app.listen(config.port, () => {
+    console.log(import_cli.prefixX, `local server http://localhost:${config.port}`);
+  });
+}
+async function devflow(configFilePath) {
+  const config = (0, import_config.parseConfig)(configFilePath);
+  const reloadEmitter = new import_events.default.EventEmitter();
+  console.log(import_cli.prefixX, "Read Documentation \u{1F4DA}: https://xatom.js.org/");
+  await buildApp(config);
+  startWebflowProxy(config, reloadEmitter);
+  reloadEmitter.emit("script-change", config.source);
+  const watcher = import_chokidar.default.watch(config.watchList, {
+    ignoreInitial: true
+  });
+  watcher.on("all", async (_, filePath) => {
+    if (/\.(js|ts)$/.test(filePath)) {
+      console.log(import_cli.prefixX, "File change detected, rebuilding...");
+      await buildApp(config);
+      reloadEmitter.emit("script-change", config.source);
+    } else if (/\.(css)$/.test(filePath)) {
+      console.log(import_cli.prefixX, "CSS change detected, reloading stylesheets...");
+      reloadEmitter.emit("styles-change", config.source);
+    }
+  });
 }

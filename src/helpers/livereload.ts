@@ -1,29 +1,94 @@
-import { DevflowConfig } from "../config";
-import { routes } from "../devflow";
+import { wf } from "peakflow/webflow";
+import { Dataset } from "peakflow/selector";
+import { routes } from "./routes";
 
-export function getReloadScript(config: DevflowConfig): string {
-  return config.livereload
-    ? `<script>
-  if ("WebSocket" in window) {
-    (function () {
-      const devflowLivereloadURL =
-        "ws://localhost:${config.port}${routes.livereload}";
-      const socket = new WebSocket(devflowLivereloadURL);
-      socket.onmessage = function (event) {
-        if (event.data === "reload") {
-          window.location.reload();
-        } else if (event.data === "reload-css"){
-          const stylesheets = document.querySelectorAll('link[rel="stylesheet"][data-dyn-css="true"]');
-          console.log("RELOAD CSS");
-          stylesheets.forEach((sheet) => {
-            const url = new URL(sheet.href);
-            url.searchParams.set("t", Date.now().toString());
-            sheet.href = url.toString();
-          });
-        } else console.log(event);
-      };
-    })();
+const dataset = Dataset.define({
+  hmr: Dataset.Boolean("data-devflow-hmr"),
+  local: Dataset.String("data-devflow-local"),
+  href: Dataset.String("href"),
+});
+
+export interface LivereloadOptions {
+  port: number;
+  enabled: boolean;
+}
+
+export type WebflowEnv = "development" | "designer" | "staging" | "production";
+
+export class Livereload {
+  private static instance: Livereload | null;
+
+  private socket: WebSocket;
+  public options: LivereloadOptions;
+
+  private constructor() {}
+
+  static getInstance(): Livereload {
+    if (!Livereload.instance) {
+      Livereload.instance = new Livereload();
+    }
+    return Livereload.instance;
   }
-  </script>`
-    : "";
+
+  private log(...message: any[]) {
+    console.log(`[Devflow]:`, ...message);
+  }
+
+  public reload() {
+    window.location.reload();
+  }
+
+  public reloadCss(host: string) {
+    if (!wf.doc) return;
+
+    const links = wf.doc.querySelectorAll<HTMLLinkElement>(
+      `link[rel="stylesheet"][${dataset.attr.hmr}="true"]`,
+    );
+
+    links.forEach((link) => {
+      const { local } = dataset.parse(link);
+      const url = new URL(`${host}/${local}`);
+      url.searchParams.set("devflow-t", Date.now().toString());
+      link.href = url.toString();
+    });
+
+    this.log(
+      `CSS Hot-Reloaded: ${links.length} ${links.length === 1 ? "file" : "files"}.`,
+    );
+  }
+
+  public start() {
+    const wsUrl = `ws://localhost:${this.options.port}${routes.livereload}`;
+    const host = `http://localhost:${this.options.port}${routes.app}`;
+
+    this.stop();
+
+    this.socket = new WebSocket(wsUrl);
+
+    this.socket.onmessage = (event) => {
+      if (event.data === "reload" && wf.env !== "designer") {
+        this.reload();
+      } else if (event.data === "reload-css") {
+        this.reloadCss(host);
+      } else {
+        this.log("Livereload: unknown event", event);
+      }
+    };
+
+    this.socket.onerror = () => {
+      this.log(`Waiting for local server on port ${this.options.port}...`);
+    };
+
+    this.socket.onclose = () => {
+      // Auto-reconnect loop
+      if (this.options.enabled) {
+        setTimeout(() => this.start(), 3000);
+      }
+    };
+  }
+
+  public stop() {
+    this.options.enabled = false;
+    if (this.socket) this.socket.close();
+  }
 }
