@@ -1,12 +1,6 @@
 import { wf } from "peakflow/webflow";
-import { Dataset } from "peakflow/selector";
+import { dataset } from "./dataset";
 import { routes } from "./routes";
-
-const dataset = Dataset.define({
-  hmr: Dataset.Boolean("data-devflow-hmr"),
-  local: Dataset.String("data-devflow-local"),
-  href: Dataset.String("href"),
-});
 
 export interface LivereloadOptions {
   port: number;

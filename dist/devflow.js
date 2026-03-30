@@ -159,7 +159,7 @@ function startWebflowProxy(config, reloadEmitter) {
       if (type && type.includes("text/html")) {
         isPage = true;
         const result = (0, import_assetReplacer.replaceAssets)(dataHtml, config);
-        scriptsRemovedLog = `Scripts removed ${result.removedCount}/${config.scriptAttribute.length}`;
+        scriptsRemovedLog = `Replaced ${result.removedCount} ${result.removedCount === 1 ? "asset" : "assets"}`;
         res.send(result.html);
       } else {
         res.send(_res.data);

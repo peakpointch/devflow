@@ -1,5 +1,4 @@
 import { DevflowConfig } from "../config";
-import { AssetAttributes } from "../types/assets";
 import { extractAssets } from "./assetParser";
 import { stringifyAssets, updateAssetUrls } from "./assetTransformer";
 import { routes } from "./routes";
@@ -10,13 +9,7 @@ export function getReloadScript(config: DevflowConfig): string {
 }
 
 export function replaceAssets(html: string, config: DevflowConfig) {
-  const configAttrs = Array.isArray(config.scriptAttribute)
-    ? config.scriptAttribute
-    : [config.scriptAttribute].filter(Boolean);
-
-  if (!configAttrs.length) return { html, removedCount: 0 };
-
-  const extracted = extractAssets(html, configAttrs);
+  const extracted = extractAssets(html);
 
   // Remove all original tags (scripts and links)
   let cleanedHtml = html;
@@ -25,7 +18,7 @@ export function replaceAssets(html: string, config: DevflowConfig) {
     cleanedHtml = cleanedHtml.replace(new RegExp(escaped, "g"), "");
   }
 
-  const updated = updateAssetUrls(extracted, config);
+  const updated = updateAssetUrls(extracted);
   const newTags = stringifyAssets(updated);
 
   // Inject before closing body

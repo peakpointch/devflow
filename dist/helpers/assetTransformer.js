@@ -22,15 +22,16 @@ __export(assetTransformer_exports, {
 });
 module.exports = __toCommonJS(assetTransformer_exports);
 var import_routes = require("./routes");
-function updateAssetUrls(assets, config) {
+var import_dataset = require("./dataset");
+function updateAssetUrls(assets) {
   return assets.map((asset) => {
     const newAttrs = { ...asset.attrs };
-    const localUrl = `${import_routes.routes.app}/${asset.filePath}/${asset.fileName}`.replace(/\/+/g, "/");
+    const localUrl = `${import_routes.routes.app}/${asset.filePath}`.replace(/\/+/g, "/");
     if (asset.type === "script") {
       newAttrs.src = localUrl;
     } else {
       newAttrs.href = localUrl;
-      newAttrs["data-devflow-css"] = "true";
+      newAttrs[import_dataset.dataset.attr.hmr] = "true";
     }
     return { ...asset, attrs: newAttrs };
   });

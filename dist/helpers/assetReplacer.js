@@ -29,15 +29,13 @@ function getReloadScript(config) {
   return `<script src="${import_routes.routes.devflow}/src/extension/dist/client.js" defer></script>`;
 }
 function replaceAssets(html, config) {
-  const configAttrs = Array.isArray(config.scriptAttribute) ? config.scriptAttribute : [config.scriptAttribute].filter(Boolean);
-  if (!configAttrs.length) return { html, removedCount: 0 };
-  const extracted = (0, import_assetParser.extractAssets)(html, configAttrs);
+  const extracted = (0, import_assetParser.extractAssets)(html);
   let cleanedHtml = html;
   for (const asset of extracted) {
     const escaped = asset.tag.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
     cleanedHtml = cleanedHtml.replace(new RegExp(escaped, "g"), "");
   }
-  const updated = (0, import_assetTransformer.updateAssetUrls)(extracted, config);
+  const updated = (0, import_assetTransformer.updateAssetUrls)(extracted);
   const newTags = (0, import_assetTransformer.stringifyAssets)(updated);
   const finalHtml = cleanedHtml.replace(
     "</body>",

@@ -21,13 +21,8 @@ __export(livereload_exports, {
 });
 module.exports = __toCommonJS(livereload_exports);
 var import_webflow = require("peakflow/webflow");
-var import_selector = require("peakflow/selector");
+var import_dataset = require("./dataset");
 var import_routes = require("./routes");
-const dataset = import_selector.Dataset.define({
-  hmr: import_selector.Dataset.Boolean("data-devflow-hmr"),
-  local: import_selector.Dataset.String("data-devflow-local"),
-  href: import_selector.Dataset.String("href")
-});
 class Livereload {
   constructor() {
   }
@@ -46,10 +41,10 @@ class Livereload {
   reloadCss(host) {
     if (!import_webflow.wf.doc) return;
     const links = import_webflow.wf.doc.querySelectorAll(
-      `link[rel="stylesheet"][${dataset.attr.hmr}="true"]`
+      `link[rel="stylesheet"][${import_dataset.dataset.attr.hmr}="true"]`
     );
     links.forEach((link) => {
-      const { local } = dataset.parse(link);
+      const { local } = import_dataset.dataset.parse(link);
       const url = new URL(`${host}/${local}`);
       url.searchParams.set("devflow-t", Date.now().toString());
       link.href = url.toString();

@@ -18,31 +18,25 @@ var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: tru
 var assetParser_exports = {};
 __export(assetParser_exports, {
   extractAssets: () => extractAssets,
-  parseAttributes: () => parseAttributes,
-  parseLocalPathFromcdn: () => parseLocalPathFromcdn
+  parseAttributes: () => parseAttributes
 });
 module.exports = __toCommonJS(assetParser_exports);
+var import_dataset = require("./dataset");
 function parseAttributes(attrString) {
   const attrs = {};
   attrString.replace(/([^\s=]+)(?:="([^"]*)")?/g, (_, name, value) => {
-    attrs[name] = value ?? true;
+    if (!value || value === "true") {
+      attrs[name] = true;
+    } else if (value === "false") {
+      attrs[name] = false;
+    } else {
+      attrs[name] = value;
+    }
     return "";
   });
   return attrs;
 }
-function parseLocalPathFromcdn(source) {
-  const jsDelivrRegex = /(?:@[\d.]+|npm\/[^@/]+@[\d.]+)\/(.*)$|gh\/[^/]+\/[^/]+\/(.*)$/;
-  const match = source.match(jsDelivrRegex);
-  const fullInternalPath = match ? match[1] || match[2] : source.replace(/^https?:\/\/[^/]+\//, "");
-  const pathParts = fullInternalPath.split("/");
-  const fileName = pathParts.pop() || "";
-  const filePath = pathParts.join("/");
-  return {
-    filePath,
-    fileName
-  };
-}
-function extractAssets(html, configAttrs) {
+function extractAssets(html) {
   const assets = [];
   const patterns = [
     {
@@ -56,18 +50,15 @@ function extractAssets(html, configAttrs) {
       srcAttr: "href"
     }
   ];
-  for (const { regex, type, srcAttr } of patterns) {
+  for (const { regex, type } of patterns) {
     let match;
     while (match = regex.exec(html)) {
       const attrs = parseAttributes(match[1]);
-      if (configAttrs.some((attr) => attr in attrs)) {
-        const source = attrs[srcAttr];
-        const { fileName, filePath } = parseLocalPathFromcdn(source);
+      if (import_dataset.dataset.attr.hmr in attrs && import_dataset.dataset.attr.local in attrs && attrs[import_dataset.dataset.attr.hmr] === true && typeof attrs[import_dataset.dataset.attr.local] === "string") {
         assets.push({
           tag: match[0],
           attrs,
-          fileName,
-          filePath,
+          filePath: attrs[import_dataset.dataset.attr.local],
           type
         });
       }
@@ -78,6 +69,5 @@ function extractAssets(html, configAttrs) {
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   extractAssets,
-  parseAttributes,
-  parseLocalPathFromcdn
+  parseAttributes
 });

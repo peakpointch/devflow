@@ -220,6 +220,13 @@
     }
   };
 
+  // src/helpers/dataset.ts
+  var dataset = Dataset.define({
+    hmr: Dataset.Boolean("data-devflow-hmr"),
+    local: Dataset.String("data-devflow-local"),
+    href: Dataset.String("href")
+  });
+
   // src/helpers/routes.ts
   var routes = {
     /**
@@ -237,11 +244,6 @@
   };
 
   // src/helpers/livereload.ts
-  var dataset = Dataset.define({
-    hmr: Dataset.Boolean("data-devflow-hmr"),
-    local: Dataset.String("data-devflow-local"),
-    href: Dataset.String("href")
-  });
   var Livereload = class _Livereload {
     constructor() {
     }

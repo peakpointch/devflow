@@ -167,7 +167,7 @@ function startWebflowProxy(
 
         const result = replaceAssets(dataHtml, config);
 
-        scriptsRemovedLog = `Scripts removed ${result.removedCount}/${config.scriptAttribute.length}`;
+        scriptsRemovedLog = `Replaced ${result.removedCount} ${result.removedCount === 1 ? "asset" : "assets"}`;
         res.send(result.html);
       } else {
         res.send(_res.data);

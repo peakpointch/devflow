@@ -63,16 +63,6 @@ const configZod = import_zod.z.object(
     dist: import_zod.z.string({
       invalid_type_error: "\u274C dist: Invalid dist path, example ./dist"
     }).default("./dist"),
-    scriptAttribute: import_zod.z.union([
-      import_zod.z.string({
-        invalid_type_error: "\u274C scriptAttribute: must be a string or an array of strings"
-      }),
-      import_zod.z.array(
-        import_zod.z.string({
-          invalid_type_error: "\u274C scriptAttribute: array elements must be strings"
-        })
-      )
-    ]).default([]).transform((val) => typeof val === "string" ? [val] : val),
     watchList: import_zod.z.union([
       import_zod.z.string({
         invalid_type_error: "\u274C watch: must be a string or an array of strings"
