@@ -1,42 +1,56 @@
-"use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
+var __create = Object.create;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
 };
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.default = builder;
-const esbuild_1 = require("esbuild");
-const cli_1 = require("./cli");
-const config_1 = __importDefault(require("./config"));
-function builder(configFilePath) {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            const config = (0, config_1.default)(configFilePath);
-            console.log(cli_1.prefixX, "Building production bundle...");
-            yield (0, esbuild_1.build)({
-                entryPoints: config.source,
-                bundle: true,
-                outdir: config.dist,
-                minify: true,
-                sourcemap: true,
-                format: "iife",
-                target: ["ES2020"],
-                treeShaking: true,
-                platform: "browser",
-                external: ["@vime/core"],
-            });
-            console.log(cli_1.prefixX, "Build done!");
-        }
-        catch (err) {
-            console.error(cli_1.prefixX, "Build failed:", err);
-        }
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var builder_exports = {};
+__export(builder_exports, {
+  default: () => builder
+});
+module.exports = __toCommonJS(builder_exports);
+var import_esbuild = require("esbuild");
+var import_cli = require("./cli");
+var import_config = __toESM(require("./config"));
+async function builder(configFilePath) {
+  try {
+    const config = (0, import_config.default)(configFilePath);
+    console.log(import_cli.prefixX, "Building production bundle...");
+    await (0, import_esbuild.build)({
+      entryPoints: config.source,
+      bundle: true,
+      outdir: config.dist,
+      minify: true,
+      sourcemap: true,
+      format: "iife",
+      target: ["ES2020"],
+      treeShaking: true,
+      platform: "browser",
+      external: ["@vime/core"]
     });
+    console.log(import_cli.prefixX, "Build done!");
+  } catch (err) {
+    console.error(import_cli.prefixX, "Build failed:", err);
+  }
 }

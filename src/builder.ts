@@ -2,7 +2,7 @@ import { build } from "esbuild";
 import { prefixX } from "./cli";
 import parseConfig from "./config";
 
-export default async function builder(configFilePath) {
+export default async function builder(configFilePath: string) {
   try {
     const config = parseConfig(configFilePath);
 

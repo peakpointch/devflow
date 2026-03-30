@@ -42,21 +42,6 @@ const configZod = z
           invalid_type_error: "❌ dist: Invalid dist path, example ./dist",
         })
         .default("./dist"),
-      scriptAttribute: z
-        .union([
-          z.string({
-            invalid_type_error:
-              "❌ scriptAttribute: must be a string or an array of strings",
-          }),
-          z.array(
-            z.string({
-              invalid_type_error:
-                "❌ scriptAttribute: array elements must be strings",
-            }),
-          ),
-        ])
-        .default([])
-        .transform((val) => (typeof val === "string" ? [val] : val)),
       watchList: z
         .union([
           z.string({

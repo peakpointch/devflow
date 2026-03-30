@@ -5,11 +5,11 @@ import { prefixX } from "./cli";
 
 const template = `{
   "webflowSubdomain": "YOUR_WEBFLOW_SUBDOMAIN",
-  "port": 3020,
-  "source": "./src/app.ts",
+  "port": 3000,
+  "livereload": true,
+  "source": ["./src/app.ts"],
   "dist": "./dist",
-  "scriptList": ["app.js"],
-  "scriptAttribute": "replace-it"
+  "watchList": ["./src/"],
 }
 `;
 

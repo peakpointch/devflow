@@ -1,22 +1,17 @@
 import { ExtractedAsset } from "../types/assets";
-import { DevflowConfig } from "../config";
-import { routes } from "../devflow";
+import { routes } from "./routes";
+import { dataset } from "./dataset";
 
-export function updateAssetUrls(
-  assets: ExtractedAsset[],
-  config: DevflowConfig,
-): ExtractedAsset[] {
+export function updateAssetUrls(assets: ExtractedAsset[]): ExtractedAsset[] {
   return assets.map((asset) => {
     const newAttrs = { ...asset.attrs };
-    const localUrl =
-      `${routes.app}/${asset.filePath}/${asset.fileName}`.replace(/\/+/g, "/");
+    const localUrl = `${routes.app}/${asset.filePath}`.replace(/\/+/g, "/");
 
     if (asset.type === "script") {
       newAttrs.src = localUrl;
     } else {
       newAttrs.href = localUrl;
-      // Mark this for the hot-reload script to find
-      newAttrs["data-devflow-css"] = "true";
+      newAttrs[dataset.attr.hmr] = "true";
     }
 
     return { ...asset, attrs: newAttrs };

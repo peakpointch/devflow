@@ -1,0 +1,14 @@
+@import "tailwindcss";
+@source "./**/*.vue";
+
+/* You can add custom theme variables here if needed */
+@theme {
+  --color-brand: #4353ff;
+}
+
+/* Remove arrows from number input */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
