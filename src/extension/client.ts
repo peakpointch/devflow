@@ -10,29 +10,27 @@ declare global {
 function initialize(): void {
   if (typeof window === "undefined") return;
 
-  const livereload = Livereload.getInstance();
-
   if (wf.env === "designer") {
     chrome.storage.local.get(["port"], (result) => {
-      const livereload = Livereload.getInstance();
+      setupAndStart((result.port as number) || 3000);
+    });
 
-      livereload.options = {
-        port: (result.port as number) || 3000,
-        enabled: true,
-      };
-
-      livereload.start();
+    chrome.runtime.onMessage.addListener((message) => {
+      if (message.type === "CONNECT_LIVERELOAD") {
+        console.log(`[Devflow] Connecting to new port: ${message.port}`);
+        setupAndStart(message.port);
+      }
     });
   } else if (wf.env === "development") {
-    livereload.options = {
-      port: parseInt(window.location.port) || 3000,
-      enabled: true,
-    };
-
-    livereload.start();
+    setupAndStart(parseInt(window.location.port) || 3000);
   }
+}
 
-  window.livereload = livereload;
+function setupAndStart(port: number) {
+  const lr = Livereload.getInstance();
+  lr.options = { port, enabled: true };
+  lr.start();
+  window.livereload = lr;
 }
 
 initialize();

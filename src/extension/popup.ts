@@ -3,15 +3,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Load saved port
   chrome.storage.local.get(["port"], (result) => {
-    if (result.port) portInput.value = result.port as string;
+    if (result.port) portInput.value = result.port.toString();
   });
 
   document.getElementById("save").addEventListener("click", () => {
     const port = parseInt(portInput.value, 10);
+
     chrome.storage.local.set({ port }, () => {
-      // Refresh the active tab to apply new port
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        if (tabs[0]) chrome.tabs.reload(tabs[0].id);
+        if (tabs[0]?.id) {
+          // Send message to client.ts instead of reloading the whole tab
+          chrome.tabs.sendMessage(tabs[0].id, {
+            type: "CONNECT_LIVERELOAD",
+            port,
+          });
+        }
         window.close();
       });
     });
