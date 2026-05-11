@@ -1,35 +1,13 @@
 import axios from "axios";
-import { build } from "esbuild";
 import chalk from "chalk";
-import chokidar from "chokidar";
 import cookieParser from "cookie-parser";
 import cors from "cors";
-import events from "events";
 import express from "express";
 import expressWs from "express-ws";
 import path from "path";
-import { parseConfigCli as parseConfigAction } from "./config.js";
 import { replaceAssets } from "./helpers/assetReplacer.js";
 import { routes } from "./helpers/routes.js";
 import logger from "./helpers/logger.js";
-async function buildApp(config) {
-  try {
-    await build({
-      entryPoints: config.build.modules,
-      bundle: true,
-      outdir: config.build.outdir,
-      sourcemap: true,
-      minify: false,
-      format: "iife",
-      target: ["es2020"],
-      platform: "browser",
-      external: ["@vime/core"]
-    });
-    logger.info(`Build Complete`);
-  } catch (err) {
-    logger.error("Build failed!\n", err);
-  }
-}
 function routeWfAuth(app, config) {
   app.post("/.wf_auth", async (req, res) => {
     try {
@@ -160,28 +138,6 @@ function startWebflowProxy(config, reloadEmitter) {
     logger.info(`Local server http://localhost:${config.server.port}`);
   });
 }
-async function devflow() {
-  const config = await parseConfigAction();
-  const reloadEmitter = new events.EventEmitter();
-  logger.setScope("Dev");
-  logger.info("Read the docs at https://github.com/peakpointch/peakflow-cli");
-  await buildApp(config);
-  startWebflowProxy(config, reloadEmitter);
-  reloadEmitter.emit("script-change", config.build.modules);
-  const watcher = chokidar.watch(config.server.watchList, {
-    ignoreInitial: true
-  });
-  watcher.on("all", async (_, filePath) => {
-    if (/\.(js|ts)$/.test(filePath)) {
-      logger.info("File change detected, rebuilding...");
-      await buildApp(config);
-      reloadEmitter.emit("script-change", config.build.modules);
-    } else if (/\.(css)$/.test(filePath)) {
-      logger.info("CSS change detected, reloading stylesheets...");
-      reloadEmitter.emit("styles-change", config.build.modules);
-    }
-  });
-}
 export {
-  devflow as default
+  startWebflowProxy
 };

@@ -2,7 +2,7 @@ import { configSchema, type PeakflowConfig } from "peakflow/config";
 import { createJiti } from "jiti";
 import fs from "fs";
 import path from "path";
-import logger from "./helpers/logger.js";
+import logger from "../helpers/logger.js";
 
 export async function parseConfig(
   cwd: string = process.cwd(),

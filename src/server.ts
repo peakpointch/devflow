@@ -1,43 +1,17 @@
 import axios from "axios";
 import { build } from "esbuild";
 import chalk from "chalk";
-import chokidar from "chokidar";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import events from "events";
 import express from "express";
 import expressWs from "express-ws";
 import path from "path";
-import stripAnsi from "strip-ansi";
 
-import { parseConfig, parseConfigCli as parseConfigAction } from "./config.js";
 import { replaceAssets } from "./helpers/assetReplacer.js";
 import { routes } from "./helpers/routes.js";
 import { PeakflowConfig } from "peakflow/config";
 import logger from "./helpers/logger.js";
-
-// -----------------------------
-// Build app with esbuild
-// -----------------------------
-async function buildApp(config: PeakflowConfig): Promise<void> {
-  try {
-    await build({
-      entryPoints: config.build.modules,
-      bundle: true,
-      outdir: config.build.outdir,
-      sourcemap: true,
-      minify: false,
-      format: "iife",
-      target: ["es2020"],
-      platform: "browser",
-      external: ["@vime/core"],
-    });
-
-    logger.info(`Build Complete`);
-  } catch (err: any) {
-    logger.error("Build failed!\n", err);
-  }
-}
 
 function routeWfAuth(
   app: ReturnType<typeof express>,
@@ -93,7 +67,7 @@ function routeWfAuth(
 // -----------------------------
 // Proxy server
 // -----------------------------
-function startWebflowProxy(
+export function startWebflowProxy(
   config: PeakflowConfig,
   reloadEmitter: events.EventEmitter,
 ) {
@@ -203,38 +177,5 @@ function startWebflowProxy(
 
   app.listen(config.server.port, () => {
     logger.info(`Local server http://localhost:${config.server.port}`);
-  });
-}
-
-// -----------------------------
-// Start Devflow
-// -----------------------------
-export default async function devflow() {
-  const config = await parseConfigAction();
-  const reloadEmitter = new events.EventEmitter();
-
-  logger.setScope("Dev");
-  logger.info("Read the docs at https://github.com/peakpointch/peakflow-cli");
-
-  // Initial build
-  await buildApp(config);
-
-  // Start webflow proxy server, mirroring the .webflow.io staging domain
-  startWebflowProxy(config, reloadEmitter);
-  reloadEmitter.emit("script-change", config.build.modules);
-
-  // Watch for changes
-  const watcher = chokidar.watch(config.server.watchList, {
-    ignoreInitial: true,
-  });
-  watcher.on("all", async (_, filePath) => {
-    if (/\.(js|ts)$/.test(filePath)) {
-      logger.info("File change detected, rebuilding...");
-      await buildApp(config);
-      reloadEmitter.emit("script-change", config.build.modules);
-    } else if (/\.(css)$/.test(filePath)) {
-      logger.info("CSS change detected, reloading stylesheets...");
-      reloadEmitter.emit("styles-change", config.build.modules);
-    }
   });
 }

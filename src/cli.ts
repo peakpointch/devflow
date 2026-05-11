@@ -2,10 +2,10 @@
 
 import { Command } from "commander";
 
-import buildAction from "./builder.js";
-import devflow from "./devflow.js";
-import { configAction } from "./commands/config/action.js";
 import { initAction } from "./commands/initAction.js";
+import { configAction } from "./commands/configAction.js";
+import { devAction } from "./commands/devAction.js";
+import { buildAction } from "./commands/buildAction.js";
 
 const program = new Command();
 
@@ -22,7 +22,7 @@ program
 program
   .command("dev")
   .description("Start the development server")
-  .action(devflow);
+  .action(devAction);
 
 program
   .command("build")

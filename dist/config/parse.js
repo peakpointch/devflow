@@ -2,7 +2,7 @@ import { configSchema } from "peakflow/config";
 import { createJiti } from "jiti";
 import fs from "fs";
 import path from "path";
-import logger from "./helpers/logger.js";
+import logger from "../helpers/logger.js";
 async function parseConfig(cwd = process.cwd()) {
   const fileNames = [
     "peakflow.config.ts",
