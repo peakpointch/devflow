@@ -2,7 +2,7 @@ import * as esbuild from "esbuild";
 import vuePlugin from "esbuild-plugin-vue3";
 import postCSSPlugin from "esbuild-postcss";
 import fs from "fs";
-import { cleanDirExcept } from "./clean-dir";
+import { cleanDirExcept } from "./clean-dir.js";
 import chalk from "chalk";
 import path from "path";
 
@@ -12,7 +12,7 @@ function getManifest(): any {
   return JSON.stringify(
     JSON.parse(
       fs.readFileSync(
-        path.resolve(__dirname, "../src/extension/manifest.json"),
+        path.resolve(import.meta.dirname, "../src/extension/manifest.json"),
         "utf-8",
       ),
     ),

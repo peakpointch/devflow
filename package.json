@@ -5,6 +5,7 @@
   "author": "Virat Patel, Lukas Manuel Graf",
   "license": "MIT",
   "private": false,
+  "type": "module",
   "bin": {
     "devflow": "./dist/cli.js"
   },
@@ -27,7 +28,8 @@
     "prettier": "^3.8.1",
     "tailwindcss": "^4.2.2",
     "tsx": "^4.21.0",
-    "typescript": "^5.0.4"
+    "typescript": "^5.0.4",
+    "vue-tsc": "^3.2.8"
   },
   "dependencies": {
     "@types/express-ws": "^3.0.1",

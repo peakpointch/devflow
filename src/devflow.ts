@@ -11,9 +11,9 @@ import path from "path";
 import stripAnsi from "strip-ansi";
 
 import { prefixX } from "./cli";
-import { parseConfig, DevflowConfig } from "./config";
-import { replaceAssets } from "./helpers/assetReplacer";
-import { routes } from "./helpers/routes";
+import { parseConfig, DevflowConfig } from "./config.js";
+import { replaceAssets } from "./helpers/assetReplacer.js";
+import { routes } from "./helpers/routes.js";
 
 // -----------------------------
 // Build app with esbuild

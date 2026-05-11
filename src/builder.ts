@@ -1,6 +1,6 @@
 import { build } from "esbuild";
-import { prefixX } from "./cli";
-import parseConfig from "./config";
+import { prefixX } from "./cli.js";
+import parseConfig from "./config.js";
 
 export default async function builder(configFilePath: string) {
   try {

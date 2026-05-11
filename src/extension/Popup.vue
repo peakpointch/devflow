@@ -1,9 +1,10 @@
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted } from 'vue';
 
 const port = ref(3000);
 const isEnabled = ref(false);
 const isProcessing = ref(false);
+//@ts-ignore
 const manifest = __manifest__;
 
 onMounted(() => {

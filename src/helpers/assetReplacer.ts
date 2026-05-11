@@ -1,7 +1,7 @@
-import { DevflowConfig } from "../config";
-import { extractAssets } from "./assetParser";
-import { stringifyAssets, updateAssetUrls } from "./assetTransformer";
-import { routes } from "./routes";
+import { DevflowConfig } from "../config.js";
+import { extractAssets } from "./assetParser.js";
+import { stringifyAssets, updateAssetUrls } from "./assetTransformer.js";
+import { routes } from "./routes.js";
 
 export function getReloadScript(config: DevflowConfig): string {
   if (!config.livereload) return "";

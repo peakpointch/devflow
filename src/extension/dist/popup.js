@@ -1,3 +1,4 @@
+"use strict";
 (() => {
   // <define:__manifest__>
   var define_manifest_default = { name: "Devflow", version: "1.2.0", description: "Hot-reloads CSS in the Webflow Designer", permissions: ["storage"], action: { default_popup: "popup.html" }, content_scripts: [{ matches: ["https://*.design.webflow.com/*"], js: ["./dist/client.js"], run_at: "document_idle" }], manifest_version: 3 };
@@ -2395,6 +2396,14 @@
     } else {
       vnode.transition = hooks;
     }
+  }
+  // @__NO_SIDE_EFFECTS__
+  function defineComponent(options, extraOptions) {
+    return isFunction(options) ? (
+      // #8236: extend call and options.name access are considered side-effects
+      // by Rollup, so we have to wrap it in a pure-annotated IIFE.
+      /* @__PURE__ */ (() => extend({ name: options.name }, extraOptions, { setup: options }))()
+    ) : options;
   }
   function markAsyncBoundary(instance) {
     instance.ids = [instance.ids[0] + instance.ids[2]++ + "-", 0, 0];
@@ -7069,7 +7078,7 @@ Component that was made reactive: `,
   }
 
   // sfc-script:/home/lukas/peakpoint/tools/devflow/src/extension/Popup.vue?type=script
-  var Popup_default = {
+  var Popup_default = /* @__PURE__ */ defineComponent({
     __name: "Popup",
     setup(__props, { expose: __expose }) {
       __expose();
@@ -7104,11 +7113,11 @@ Component that was made reactive: `,
           });
         });
       };
-      const __returned__ = { port, isEnabled, isProcessing, manifest, toggleConnection, ref, onMounted };
+      const __returned__ = { port, isEnabled, isProcessing, manifest, toggleConnection };
       Object.defineProperty(__returned__, "__isScriptSetup", { enumerable: false, value: true });
       return __returned__;
     }
-  };
+  });
 
   // sfc-template:/home/lukas/peakpoint/tools/devflow/src/extension/Popup.vue?type=template
   var _hoisted_1 = { class: "flex flex-col gap-4 w-[220px] p-4 bg-zinc-900 text-zinc-100 antialiased border border-zinc-800 rounded-lg" };

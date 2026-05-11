@@ -1,5 +1,5 @@
 import { wf } from "peakflow/webflow";
-import { Livereload } from "../helpers/livereload";
+import { Livereload } from "../helpers/livereload.js";
 
 declare global {
   interface Window {

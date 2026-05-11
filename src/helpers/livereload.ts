@@ -1,6 +1,6 @@
 import { wf } from "peakflow/webflow";
-import { dataset } from "./dataset";
-import { routes } from "./routes";
+import { dataset } from "./dataset.js";
+import { routes } from "./routes.js";
 
 export interface LivereloadOptions {
   port: number;
@@ -12,8 +12,11 @@ export type WebflowEnv = "development" | "designer" | "staging" | "production";
 export class Livereload {
   private static instance: Livereload | null;
 
-  private socket: WebSocket;
-  public options: LivereloadOptions;
+  private socket: WebSocket | undefined;
+  public options: LivereloadOptions = {
+    port: 3000,
+    enabled: true,
+  };
 
   private constructor() {}
 

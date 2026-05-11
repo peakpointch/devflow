@@ -1,3 +1,4 @@
+"use strict";
 (() => {
   // node_modules/peakflow/dist/webflow/webflow.js
   var siteId = document.documentElement.dataset.wfSite || "";
@@ -53,12 +54,21 @@
     checkboxInput: `.${wfclass.wcheckbox} input[type="checkbox"]:not(.${wfclass.checkbox})`,
     inputSelectorList
   };
-  var Webflow = class {
+  var Webflow = class _Webflow {
     constructor() {
       this.siteId = siteId;
       this.pageId = pageId;
       this.class = wfclass;
       this.select = wfselect;
+    }
+    static getInstance() {
+      if (!_Webflow.instance) {
+        _Webflow.instance = new _Webflow();
+        window.peakflow.webflow = _Webflow.instance;
+      }
+      return _Webflow.instance;
+    }
+    initGlobal() {
     }
     /**
      * Determines whether a given element is visible accordion to Webflow's
@@ -107,7 +117,7 @@
       }
     }
   };
-  var wf = new Webflow();
+  var wf = Webflow.getInstance();
 
   // node_modules/peakflow/dist/selector/attributes.js
   var Dataset = class _Dataset {
@@ -245,6 +255,12 @@
 
   // src/helpers/livereload.ts
   var Livereload = class _Livereload {
+    static instance;
+    socket;
+    options = {
+      port: 3e3,
+      enabled: true
+    };
     constructor() {
     }
     static getInstance() {

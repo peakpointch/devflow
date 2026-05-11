@@ -1,6 +1,6 @@
-import { ExtractedAsset } from "../types/assets";
-import { routes } from "./routes";
-import { dataset } from "./dataset";
+import type { ExtractedAsset } from "../types/assets.js";
+import { routes } from "./routes.js";
+import { dataset } from "./dataset.js";
 
 export function updateAssetUrls(assets: ExtractedAsset[]): ExtractedAsset[] {
   return assets.map((asset) => {

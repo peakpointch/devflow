@@ -1,6 +1,6 @@
 import * as esbuild from "esbuild";
 import fs from "fs";
-import { cleanDirExcept } from "./clean-dir";
+import { cleanDirExcept } from "./clean-dir.js";
 import chalk from "chalk";
 
 const outdir = "dist/";
@@ -17,8 +17,8 @@ async function buildCLI() {
     entryPoints,
     outdir,
     platform: "node",
-    format: "cjs",
-    target: "node16",
+    format: "esm",
+    target: "node20",
   });
 
   console.log(
