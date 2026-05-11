@@ -15,6 +15,12 @@ program
   .version("1.0.0");
 
 program
+  .command("init")
+  .description("Create a new project from the official template")
+  .argument("<project-name>", "Name of the project folder")
+  .action(initAction);
+
+program
   .command("config")
   .description("Create a peakflow.config.ts file")
   .action(configAction);
@@ -28,5 +34,11 @@ program
   .command("build")
   .description("Build the production bundle")
   .action(buildAction);
+
+program
+  .command("wistia")
+  .description("Get binary video urls from wistia")
+  .argument("<media-id>", "Identifier of the wistia asset")
+  .action(wistiaAction);
 
 program.parse(process.argv);
