@@ -1,56 +1,32 @@
 #! /usr/bin/env node
 
-import yargs from "yargs";
-import { hideBin } from "yargs/helpers";
-import builder from "./builder";
-import devflow from "./devflow";
-import initConfig from "./initialize";
-import chalk from "chalk";
+import { Command } from "commander";
 
-export const prefixX = `${chalk.bgMagenta(" xAtom ")} ⏩`;
-const configFileName = "devflow.json";
+import buildAction from "./builder.js";
+import devflow from "./devflow.js";
+import { configAction } from "./commands/config/action.js";
+import { initAction } from "./commands/initAction.js";
 
-yargs(hideBin(process.argv))
-  .command(
-    "dev [config]",
-    "to start dev server",
-    (yargs) => {
-      return yargs.positional("config", {
-        describe: "config file path",
-        default: configFileName,
-      });
-    },
-    (arg) => {
-      devflow(arg.config as string);
-    },
-  )
-  .command(
-    "build [config]",
-    "build production bundle",
-    (yargs) => {
-      return yargs.positional("config", {
-        describe: "config file path",
-        default: configFileName,
-      });
-    },
-    (arg) => {
-      builder(arg.config as string);
-    },
-  )
-  .command(
-    "init [file]",
-    "create devflow.json configuration file",
-    (yargs) => {
-      return yargs.positional("file", {
-        describe: "config file name",
-        default: configFileName,
-      });
-    },
-    (arg) => {
-      initConfig(arg.file as string);
-    },
-  )
-  .help()
-  .demandCommand()
-  .recommendCommands()
-  .parse();
+const program = new Command();
+
+program
+  .name("peakflow")
+  .description("PeakFlow CLI tool for project management")
+  .version("1.0.0");
+
+program
+  .command("config")
+  .description("Create a peakflow.config.ts file")
+  .action(configAction);
+
+program
+  .command("dev")
+  .description("Start the development server")
+  .action(devflow);
+
+program
+  .command("build")
+  .description("Build the production bundle")
+  .action(buildAction);
+
+program.parse(process.argv);
