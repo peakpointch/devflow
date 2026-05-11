@@ -11,19 +11,20 @@ import path from "path";
 import stripAnsi from "strip-ansi";
 
 import { prefixX } from "./cli";
-import { parseConfig, DevflowConfig } from "./config.js";
+import { parseConfig, parseConfigCli as parseConfigAction } from "./config.js";
 import { replaceAssets } from "./helpers/assetReplacer.js";
 import { routes } from "./helpers/routes.js";
+import { PeakflowConfig } from "peakflow/config";
 
 // -----------------------------
 // Build app with esbuild
 // -----------------------------
-async function buildApp(config: DevflowConfig): Promise<void> {
+async function buildApp(config: PeakflowConfig): Promise<void> {
   try {
     await build({
-      entryPoints: config.source,
+      entryPoints: config.build.modules,
       bundle: true,
-      outdir: `${config.dist}`,
+      outdir: config.build.outdir,
       sourcemap: true,
       minify: false,
       format: "iife",
@@ -40,22 +41,22 @@ async function buildApp(config: DevflowConfig): Promise<void> {
 
 function routeWfAuth(
   app: ReturnType<typeof express>,
-  config: DevflowConfig,
+  config: PeakflowConfig,
 ): void {
   app.post("/.wf_auth", async (req, res) => {
     try {
       const body = new URLSearchParams(req.body).toString();
 
       const _res = await axios.post(
-        `https://${config.webflowSubdomain}.webflow.io/.wf_auth`,
+        `https://${config.server.webflowSubdomain}.webflow.io/.wf_auth`,
         body,
         {
           headers: {
             "Content-Type": "application/x-www-form-urlencoded",
             "User-Agent": req.headers["user-agent"] || "",
             Cookie: req.headers.cookie || "",
-            Origin: `https://${config.webflowSubdomain}.webflow.io`,
-            Referer: `https://${config.webflowSubdomain}.webflow.io${req.headers.referer?.replace(/^https?:\/\/[^/]+/, "") || "/"}`,
+            Origin: `https://${config.server.webflowSubdomain}.webflow.io`,
+            Referer: `https://${config.server.webflowSubdomain}.webflow.io${req.headers.referer?.replace(/^https?:\/\/[^/]+/, "") || "/"}`,
             Accept:
               "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
             "Accept-Language":
@@ -93,7 +94,7 @@ function routeWfAuth(
 // Proxy server
 // -----------------------------
 function startWebflowProxy(
-  config: DevflowConfig,
+  config: PeakflowConfig,
   reloadEmitter: events.EventEmitter,
 ) {
   const app = express();
@@ -106,11 +107,14 @@ function startWebflowProxy(
   );
   app.use(cookieParser());
   app.use(routes.app, express.static(process.cwd()));
-  app.use(routes.devflow, express.static(path.resolve(__dirname, "..")));
+  app.use(
+    routes.devflow,
+    express.static(path.resolve(import.meta.dirname, "..")),
+  );
   app.use(express.urlencoded({ extended: true }));
   app.use(express.json());
 
-  if (config.livereload) {
+  if (config.server.livereload) {
     wsInstance.app.ws(routes.livereload, () => {
       console.log(prefixX, "Auto Reload connection established");
     });
@@ -119,14 +123,16 @@ function startWebflowProxy(
   reloadEmitter.on("script-change", () => {
     wsInstance
       .getWss()
-      .clients.forEach((client) => config.livereload && client.send("reload"));
+      .clients.forEach(
+        (client) => config.server.livereload && client.send("reload"),
+      );
   });
 
   reloadEmitter.on("styles-change", () => {
     wsInstance
       .getWss()
       .clients.forEach(
-        (client) => config.livereload && client.send("reload-css"),
+        (client) => config.server.livereload && client.send("reload-css"),
       );
   });
 
@@ -141,10 +147,10 @@ function startWebflowProxy(
       if (req.url.includes("devtools")) return;
 
       const _res = await axios.get(
-        `https://${config.webflowSubdomain}.webflow.io${req.url}`,
+        `https://${config.server.webflowSubdomain}.webflow.io${req.url}`,
         {
           headers: {
-            Referer: `https://${config.webflowSubdomain}.webflow.io${req.path}`,
+            Referer: `https://${config.server.webflowSubdomain}.webflow.io${req.path}`,
             "Referrer-Policy": "strict-origin-when-cross-origin",
             "User-Agent": req.headers["user-agent"] || "",
             accept:
@@ -206,8 +212,8 @@ function startWebflowProxy(
 // -----------------------------
 // Start Devflow
 // -----------------------------
-export default async function devflow(configFilePath: string) {
-  const config = parseConfig(configFilePath);
+export default async function devflow() {
+  const config = await parseConfigAction();
   const reloadEmitter = new events.EventEmitter();
 
   console.log(prefixX, "Read Documentation 📚: https://xatom.js.org/");
@@ -217,20 +223,20 @@ export default async function devflow(configFilePath: string) {
 
   // Start webflow proxy server, mirroring the .webflow.io staging domain
   startWebflowProxy(config, reloadEmitter);
-  reloadEmitter.emit("script-change", config.source);
+  reloadEmitter.emit("script-change", config.build.modules);
 
   // Watch for changes
-  const watcher = chokidar.watch(config.watchList, {
+  const watcher = chokidar.watch(config.server.watchList, {
     ignoreInitial: true,
   });
   watcher.on("all", async (_, filePath) => {
     if (/\.(js|ts)$/.test(filePath)) {
       console.log(prefixX, "File change detected, rebuilding...");
       await buildApp(config);
-      reloadEmitter.emit("script-change", config.source);
+      reloadEmitter.emit("script-change", config.build.modules);
     } else if (/\.(css)$/.test(filePath)) {
       console.log(prefixX, "CSS change detected, reloading stylesheets...");
-      reloadEmitter.emit("styles-change", config.source);
+      reloadEmitter.emit("styles-change", config.build.modules);
     }
   });
 }

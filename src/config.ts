@@ -1,104 +1,61 @@
+import { configSchema, type PeakflowConfig } from "peakflow/config";
+import { createJiti } from "jiti";
 import fs from "fs";
 import path from "path";
-import { z } from "zod";
+import logger from "./helpers/logger.js";
 
-export const fileExists = (configFilePath: string): boolean => {
-  return fs.existsSync(path.resolve(configFilePath));
-};
+export async function parseConfig(
+  cwd: string = process.cwd(),
+): Promise<PeakflowConfig> {
+  const fileNames = [
+    "peakflow.config.ts",
+    "peakflow.config.js",
+    "peakflow.config.mjs",
+    "peakflow.config.json",
+  ];
 
-const configZod = z
-  .object(
-    {
-      webflowSubdomain: z.string({
-        invalid_type_error: "❌ webflowSubdomain: Invalid webflow subdomain",
-        required_error: "❌ webflowSubdomain: Webflow subdomain is required",
-      }),
-      port: z
-        .number({
-          invalid_type_error: "❌ port: Invalid port",
-        })
-        .default(3015),
-      livereload: z
-        .boolean({
-          invalid_type_error: "❌ port: Invalid port",
-        })
-        .default(true),
-      source: z
-        .union([
-          z.string({
-            invalid_type_error:
-              "❌ source: must be a string or an array of strings",
-          }),
-          z.array(
-            z.string({
-              invalid_type_error: "❌ source: array elements must be strings",
-            }),
-          ),
-        ])
-        .default(["./src"])
-        .transform((val) => (typeof val === "string" ? [val] : val)),
-      dist: z
-        .string({
-          invalid_type_error: "❌ dist: Invalid dist path, example ./dist",
-        })
-        .default("./dist"),
-      watchList: z
-        .union([
-          z.string({
-            invalid_type_error:
-              "❌ watch: must be a string or an array of strings",
-          }),
-          z.array(
-            z.string({
-              invalid_type_error: "❌ watch: array elements must be strings",
-            }),
-          ),
-        ])
-        .default(["./src"])
-        .transform((val) => (typeof val === "string" ? [val] : val)),
-    },
-    {
-      required_error: "❌ Invalid configuration",
-    },
-  )
-  .required({
-    webflowSubdomain: true,
-  });
+  const filePaths = fileNames.map((name) => path.resolve(cwd, name));
+  const configPath = filePaths.find((path) => fs.existsSync(path));
 
-export type DevflowConfig = z.infer<typeof configZod>;
-
-export function parseConfig(configPath: string): DevflowConfig {
-  if (!fileExists(configPath)) {
-    console.warn("⚠️ unable to locate config file:", configPath);
-    process.exit(1);
+  if (!configPath) {
+    throw new Error(
+      `Could not find peakflow.config.ts in the current directory.`,
+    );
   }
 
-  const configData = JSON.parse(
-    fs.readFileSync(path.resolve(configPath), "utf-8"),
-  );
+  let rawConfig: any;
 
-  const config = configZod.safeParse(configData);
+  if (configPath.endsWith(".json")) {
+    rawConfig = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+  } else {
+    const jiti = createJiti(import.meta.url);
+    const module = await jiti.import(configPath, { default: true });
+    rawConfig = module;
+  }
 
-  if (!config.success) {
-    const errors = config.error.format();
+  const result = configSchema.safeParse(rawConfig);
 
-    console.log("Devflow config is invalid ❗");
-    console.log("");
-
-    Object.keys(errors).forEach((key) => {
-      const val = errors[key];
-      if (Array.isArray(val)) {
-        val.forEach((e) => console.log(e));
-      }
-      if (typeof val === "object" && val?._errors) {
-        val._errors.forEach((e: any) => console.log(e));
-      }
+  if (!result.success) {
+    const message = ["Invalid peakflow.config.ts structure:"];
+    result.error.issues.forEach((issue) => {
+      message.push(`  - ${issue.path.join(".")}: ${issue.message}`);
     });
-
-    process.exit(1);
+    throw new Error(message.join("\n"));
   }
 
-  return config.data;
+  return result.data;
 }
 
-export default parseConfig;
+export async function parseConfigCli(): Promise<PeakflowConfig> {
+  let config: PeakflowConfig;
+
+  try {
+    config = await parseConfig();
+  } catch (err) {
+    logger.setScope("Config");
+    logger.error("Failed to parse config:", err);
+    process.exit(1);
+  }
+
+  return config;
+}

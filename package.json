@@ -42,7 +42,7 @@
     "esbuild": "^0.25.9",
     "express": "^4.18.2",
     "express-ws": "^5.0.2",
-    "peakflow": "github:peakpointch/peakflow#v0.3.0-alpha.4",
+    "peakflow": "github:peakpointch/peakflow#9ad7051",
     "strip-ansi": "^7.1.0",
     "vue": "^3.5.31",
     "zod": "^3.21.4"

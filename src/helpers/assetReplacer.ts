@@ -1,14 +1,14 @@
-import { DevflowConfig } from "../config.js";
+import { PeakflowConfig } from "peakflow/config";
 import { extractAssets } from "./assetParser.js";
 import { stringifyAssets, updateAssetUrls } from "./assetTransformer.js";
 import { routes } from "./routes.js";
 
-export function getReloadScript(config: DevflowConfig): string {
-  if (!config.livereload) return "";
+export function getReloadScript(config: PeakflowConfig): string {
+  if (!config.server.livereload) return "";
   return `<script src="${routes.devflow}/src/extension/dist/client.js" defer></script>`;
 }
 
-export function replaceAssets(html: string, config: DevflowConfig) {
+export function replaceAssets(html: string, config: PeakflowConfig) {
   const extracted = extractAssets(html);
 
   // Remove all original tags (scripts and links)

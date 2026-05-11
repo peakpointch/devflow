@@ -1,17 +1,18 @@
 import { build } from "esbuild";
-import { prefixX } from "./cli.js";
+import { parseConfig, parseConfigCli as parseConfigAction } from "./config.js";
 import parseConfig from "./config.js";
+import { PeakflowConfig } from "peakflow";
 
-export default async function builder(configFilePath: string) {
-  try {
-    const config = parseConfig(configFilePath);
+export default async function buildAction() {
+  const config = await parseConfigAction();
 
     console.log(prefixX, "Building production bundle...");
 
+  try {
     await build({
-      entryPoints: config.source,
+      entryPoints: config.build.modules,
       bundle: true,
-      outdir: config.dist,
+      outdir: config.build.outdir,
       minify: true,
       sourcemap: true,
       format: "iife",
