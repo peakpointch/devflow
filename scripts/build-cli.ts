@@ -2,6 +2,7 @@ import * as esbuild from "esbuild";
 import fs from "fs";
 import { cleanDirExcept } from "./clean-dir.js";
 import chalk from "chalk";
+import logger from "../src/helpers/logger.js";
 
 const outdir = "dist/";
 
@@ -21,10 +22,13 @@ async function buildCLI() {
     target: "node20",
   });
 
-  console.log(
-    chalk.green("[Build Complete]"),
-    `CLI: ${entryPoints.length} files compiled to ${outdir}`,
+  logger.setScope("Build");
+  logger.info(
+    `Complete! CLI: Compiled ${entryPoints.length} files to ${outdir}`,
   );
 }
 
-buildCLI().catch(() => process.exit(1));
+buildCLI().catch((reason) => {
+  logger.error("Error while building CLI:", reason);
+  process.exit(1);
+});

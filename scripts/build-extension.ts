@@ -5,6 +5,7 @@ import fs from "fs";
 import { cleanDirExcept } from "./clean-dir.js";
 import chalk from "chalk";
 import path from "path";
+import logger from "../src/helpers/logger.js";
 
 const outdir = "src/extension/dist";
 
@@ -45,10 +46,13 @@ async function buildExtension() {
     },
   });
 
-  console.log(
-    chalk.green("[Build Complete]"),
-    `extension: ${entryPoints.length} files compiled to ${outdir}`,
+  logger.setScope("Build");
+  logger.info(
+    `Complete! Extension: Compiled ${entryPoints.length} files to ${outdir}`,
   );
 }
 
-buildExtension().catch(() => process.exit(1));
+buildExtension().catch((reason) => {
+  logger.error("Error while building extension:", reason);
+  process.exit(1);
+});

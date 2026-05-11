@@ -2,8 +2,8 @@ import { extractAssets } from "./assetParser.js";
 import { stringifyAssets, updateAssetUrls } from "./assetTransformer.js";
 import { routes } from "./routes.js";
 function getReloadScript(config) {
-  if (!config.livereload) return "";
-  return `<script src="${import_routes.routes.devflow}/src/extension/dist/client.js" defer></script>`;
+  if (!config.server.livereload) return "";
+  return `<script src="${routes.devflow}/src/extension/dist/client.js" defer></script>`;
 }
 function replaceAssets(html, config) {
   const extracted = extractAssets(html);

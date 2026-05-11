@@ -1,12 +1,13 @@
 import { build } from "esbuild";
 import { parseConfig, parseConfigCli as parseConfigAction } from "./config.js";
-import parseConfig from "./config.js";
+import logger from "./helpers/logger.js";
 import { PeakflowConfig } from "peakflow";
 
 export default async function buildAction() {
   const config = await parseConfigAction();
 
-    console.log(prefixX, "Building production bundle...");
+  logger.setScope("Build");
+  logger.info("Building production bundle...");
 
   try {
     await build({
@@ -22,8 +23,10 @@ export default async function buildAction() {
       external: ["@vime/core"],
     });
 
-    console.log(prefixX, "Build done!");
+    logger.info(
+      `Complete! Compiled ${config.build.modules.length} files to ${config.build.outdir}`,
+    );
   } catch (err) {
-    console.error(prefixX, "Build failed:", err);
+    logger.error("Failed to build!\n", err);
   }
 }

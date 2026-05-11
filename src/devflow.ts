@@ -10,11 +10,11 @@ import expressWs from "express-ws";
 import path from "path";
 import stripAnsi from "strip-ansi";
 
-import { prefixX } from "./cli";
 import { parseConfig, parseConfigCli as parseConfigAction } from "./config.js";
 import { replaceAssets } from "./helpers/assetReplacer.js";
 import { routes } from "./helpers/routes.js";
 import { PeakflowConfig } from "peakflow/config";
+import logger from "./helpers/logger.js";
 
 // -----------------------------
 // Build app with esbuild
@@ -33,9 +33,9 @@ async function buildApp(config: PeakflowConfig): Promise<void> {
       external: ["@vime/core"],
     });
 
-    console.log(prefixX, "Build done");
+    logger.info(`Build Complete`);
   } catch (err: any) {
-    console.error(prefixX, "Build failed:", err.message);
+    logger.error("Build failed!\n", err);
   }
 }
 
@@ -116,7 +116,7 @@ function startWebflowProxy(
 
   if (config.server.livereload) {
     wsInstance.app.ws(routes.livereload, () => {
-      console.log(prefixX, "Auto Reload connection established");
+      logger.info("Auto Reload connection established");
     });
   }
 
@@ -183,29 +183,26 @@ function startWebflowProxy(
       if (err.response && err.response.status === 401) {
         res.status(401).send(err.response.data);
       } else {
-        console.log(prefixX, "Page not found", req.path);
+        logger.error("Page not found", req.path);
         res.send(
-          `${stripAnsi(prefixX)} page not found ${req.path} | status : ${err.message}`,
+          `[${logger.scope}] Page not found ${req.path} | status : ${err.message}`,
         );
       }
     } finally {
       const endPref = Date.now();
       if (isPage) {
-        console.log(
-          prefixX,
-          "Page",
-          chalk.cyan(req.url),
-          `took ${endPref - startPref}ms to fetch`,
+        logger.info(
+          `Page ${chalk.cyan(req.url)} took ${endPref - startPref}ms to fetch`,
         );
       }
       if (scriptsRemovedLog) {
-        console.log(prefixX, scriptsRemovedLog);
+        logger.info(scriptsRemovedLog);
       }
     }
   });
 
-  app.listen(config.port, () => {
-    console.log(prefixX, `local server http://localhost:${config.port}`);
+  app.listen(config.server.port, () => {
+    logger.info(`Local server http://localhost:${config.server.port}`);
   });
 }
 
@@ -216,7 +213,8 @@ export default async function devflow() {
   const config = await parseConfigAction();
   const reloadEmitter = new events.EventEmitter();
 
-  console.log(prefixX, "Read Documentation 📚: https://xatom.js.org/");
+  logger.setScope("Dev");
+  logger.info("Read the docs at https://github.com/peakpointch/peakflow-cli");
 
   // Initial build
   await buildApp(config);
@@ -231,11 +229,11 @@ export default async function devflow() {
   });
   watcher.on("all", async (_, filePath) => {
     if (/\.(js|ts)$/.test(filePath)) {
-      console.log(prefixX, "File change detected, rebuilding...");
+      logger.info("File change detected, rebuilding...");
       await buildApp(config);
       reloadEmitter.emit("script-change", config.build.modules);
     } else if (/\.(css)$/.test(filePath)) {
-      console.log(prefixX, "CSS change detected, reloading stylesheets...");
+      logger.info("CSS change detected, reloading stylesheets...");
       reloadEmitter.emit("styles-change", config.build.modules);
     }
   });
