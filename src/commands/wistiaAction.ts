@@ -1,4 +1,4 @@
-import { type WistiaMediaResponse } from "./types";
+import { type WistiaMediaResponse } from "../types/wistia.js";
 
 async function fetchWistiaMedia(id: string): Promise<WistiaMediaResponse> {
   const response = await fetch(

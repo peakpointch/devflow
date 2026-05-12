@@ -4,6 +4,7 @@ import { initAction } from "./commands/initAction.js";
 import { configAction } from "./commands/configAction.js";
 import { devAction } from "./commands/devAction.js";
 import { buildAction } from "./commands/buildAction.js";
+import { wistiaAction } from "./commands/wistiaAction.js";
 const program = new Command();
 program.name("peakflow").description("PeakFlow CLI tool for project management").version("1.0.0");
 program.command("init").description("Create a new project from the official template").argument("<project-name>", "Name of the project folder").action(initAction);
