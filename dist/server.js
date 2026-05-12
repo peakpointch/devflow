@@ -59,7 +59,7 @@ function startWebflowProxy(config, reloadEmitter) {
   app.use(cookieParser());
   app.use(routes.app, express.static(process.cwd()));
   app.use(
-    routes.devflow,
+    routes.server,
     express.static(path.resolve(import.meta.dirname, ".."))
   );
   app.use(express.urlencoded({ extended: true }));

@@ -37,7 +37,7 @@ async function buildExtension() {
     platform: "browser",
     conditions: ["style"],
     plugins: [vuePlugin(), postCSSPlugin()],
-    minify: false,
+    minify: true,
     define: {
       __VUE_OPTIONS_API__: "false", // Disable for smaller bundle
       __VUE_PROD_DEVTOOLS__: "false",

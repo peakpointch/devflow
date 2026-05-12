@@ -1,13 +1,13 @@
 {
-  "name": "devflow",
-  "version": "1.2.0",
+  "name": "peakflow-cli",
+  "version": "0.1.0",
   "description": "A high-performance build system and local dev-server with livereload for custom-code-heavy Webflow projects.",
-  "author": "Virat Patel, Lukas Manuel Graf",
+  "author": "Lukas Manuel Graf, Virat Patel",
   "license": "MIT",
   "private": false,
   "type": "module",
   "bin": {
-    "devflow": "./dist/cli.js"
+    "peakflow": "./dist/cli.js"
   },
   "scripts": {
     "dev": "nodemon",

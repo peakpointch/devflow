@@ -17,7 +17,7 @@ class Livereload {
     return Livereload.instance;
   }
   log(...message) {
-    console.log(`[Devflow]:`, ...message);
+    console.log(`[Dev Server]:`, ...message);
   }
   reload() {
     window.location.reload();
@@ -30,7 +30,7 @@ class Livereload {
     links.forEach((link) => {
       const { local } = dataset.parse(link);
       const url = new URL(`${host}/${local}`);
-      url.searchParams.set("devflow-t", Date.now().toString());
+      url.searchParams.set("peakflow-t", Date.now().toString());
       link.href = url.toString();
     });
     this.log(

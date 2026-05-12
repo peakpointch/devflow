@@ -5,7 +5,7 @@ import { routes } from "./routes.js";
 
 export function getReloadScript(config: PeakflowConfig): string {
   if (!config.server.livereload) return "";
-  return `<script src="${routes.devflow}/src/extension/dist/client.js" defer></script>`;
+  return `<script src="${routes.server}/src/extension/dist/client.js" defer></script>`;
 }
 
 export function replaceAssets(html: string, config: PeakflowConfig) {

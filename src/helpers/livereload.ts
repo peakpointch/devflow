@@ -27,8 +27,8 @@ export class Livereload {
     return Livereload.instance;
   }
 
-  private log(...message: any[]) {
-    console.log(`[Devflow]:`, ...message);
+  public log(...message: any[]) {
+    console.log(`[Dev Server]:`, ...message);
   }
 
   public reload() {
@@ -45,7 +45,7 @@ export class Livereload {
     links.forEach((link) => {
       const { local } = dataset.parse(link);
       const url = new URL(`${host}/${local}`);
-      url.searchParams.set("devflow-t", Date.now().toString());
+      url.searchParams.set("peakflow-t", Date.now().toString());
       link.href = url.toString();
     });
 

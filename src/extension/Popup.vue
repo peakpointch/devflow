@@ -52,7 +52,7 @@ const toggleConnection = () => {
           :class="isEnabled ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]' : 'bg-zinc-600'"
         ></div>
         <span class="text-[10px] font-bold uppercase tracking-tighter text-zinc-400">
-          Devflow {{ manifest.version }}
+          Peakflow {{ manifest.version }}
         </span>
       </div>
       <span class="text-[9px] font-medium px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-500 uppercase">

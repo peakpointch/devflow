@@ -1,5 +1,5 @@
 {
-  "name": "Devflow",
+  "name": "Peakflow",
   "version": "1.2.0",
   "description": "Hot-reloads CSS in the Webflow Designer",
   "permissions": ["storage"],

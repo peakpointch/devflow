@@ -12,8 +12,8 @@ const program = new Command();
 
 program
   .name("peakflow")
-  .description("PeakFlow CLI tool for project management")
-  .version("1.0.0");
+  .description("Peakflow CLI tool for managing webflow custom code projects.")
+  .version("0.1.0");
 
 program
   .command("init")

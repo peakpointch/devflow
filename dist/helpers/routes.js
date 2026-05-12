@@ -8,9 +8,9 @@ const routes = {
    */
   app: "/__app",
   /**
-   * Hosts devflow files
+   * Hosts server files
    */
-  devflow: "/__devflow"
+  server: "/__server"
 };
 export {
   routes
