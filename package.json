@@ -49,6 +49,7 @@
     "loglevel": "^1.9.2",
     "peakflow": "github:peakpointch/peakflow#9ad7051",
     "vue": "^3.5.31",
+    "webflow-api": "^3.3.4",
     "zod": "^3.21.4"
   }
 }
