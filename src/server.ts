@@ -142,7 +142,7 @@ export function startWebflowProxy(
       const type = _res.headers["content-type"] || _res.headers["Content-Type"];
       let dataHtml = _res.data;
 
-      if (type && type.includes("text/html")) {
+      if (type && typeof type === "string" && type.includes("text/html")) {
         isPage = true;
 
         const result = replaceAssets(dataHtml, config);

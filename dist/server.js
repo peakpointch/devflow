@@ -105,7 +105,7 @@ function startWebflowProxy(config, reloadEmitter) {
       );
       const type = _res.headers["content-type"] || _res.headers["Content-Type"];
       let dataHtml = _res.data;
-      if (type && type.includes("text/html")) {
+      if (type && typeof type === "string" && type.includes("text/html")) {
         isPage = true;
         const result = replaceAssets(dataHtml, config);
         scriptsRemovedLog = `Replaced ${result.removedCount} ${result.removedCount === 1 ? "asset" : "assets"}`;
