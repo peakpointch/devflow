@@ -20,6 +20,12 @@ class CliLogger {
   get scope() {
     return this._scope;
   }
+  get indent() {
+    return " ".repeat(this._scope.length);
+  }
+  get newLine() {
+    return "\n" + this.indent;
+  }
   setScope(scope) {
     this.scope = scope;
   }

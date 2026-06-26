@@ -26,6 +26,14 @@ export class CliLogger {
     return this._scope;
   }
 
+  public get indent(): string {
+    return " ".repeat(this._scope.length);
+  }
+
+  public get newLine(): string {
+    return "\n" + this.indent;
+  }
+
   public setScope(scope: string) {
     this.scope = scope;
   }
