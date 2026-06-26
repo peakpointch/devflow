@@ -1,7 +1,6 @@
 import * as esbuild from "esbuild";
 import fs from "fs";
 import { cleanDirExcept } from "./clean-dir.js";
-import chalk from "chalk";
 import logger from "../src/helpers/logger.js";
 
 const outdir = "dist/";
@@ -10,7 +9,7 @@ async function buildCLI() {
   cleanDirExcept(outdir);
 
   const entryPoints = fs.globSync("src/**/*.ts", {
-    exclude: ["src/extension/**", "src/types**"],
+    exclude: ["src/extension/**", "src/types**", "**/template.config.ts"],
   });
 
   await esbuild.build({

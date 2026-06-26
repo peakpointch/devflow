@@ -2,22 +2,45 @@ import { configSchema } from "peakflow/config";
 import { createJiti } from "jiti";
 import fs from "fs";
 import path from "path";
+import chalk from "chalk";
 import logger from "../helpers/logger.js";
-async function parseConfig(cwd = process.cwd()) {
-  const fileNames = [
-    "peakflow.config.ts",
-    "peakflow.config.js",
-    "peakflow.config.mjs",
-    "peakflow.config.json"
-  ];
-  const filePaths = fileNames.map((name) => path.resolve(cwd, name));
-  const configPath = filePaths.find((path2) => fs.existsSync(path2));
-  if (!configPath) {
-    throw new Error(
-      `Could not find peakflow.config.ts in the current directory.`
+const configFileNames = {
+  ts: "peakflow.config.ts",
+  js: "peakflow.config.js",
+  mjs: "peakflow.config.mjs",
+  json: "peakflow.config.json",
+  glob: "peakflow.config.{ts|js|mjs|json}"
+};
+const defaultConfigFileType = "ts";
+const defaultConfigFileName = configFileNames[defaultConfigFileType];
+function resolveConfigPath(type, dir) {
+  return path.resolve(dir, configFileNames[type]);
+}
+function resolveAllConfigPaths(dir) {
+  const resolved = {};
+  for (const type in configFileNames) {
+    resolved[type] = resolveConfigPath(
+      type,
+      dir
     );
   }
+  return resolved;
+}
+function findConfigPath(dir) {
+  const matches = fs.globSync(path.resolve(dir, configFileNames.glob));
+  return matches[0];
+}
+function configExists(dir) {
+  return fs.globSync(path.resolve(dir, configFileNames.glob)).length > 0;
+}
+async function parseConfig() {
   let rawConfig;
+  const configPath = findConfigPath(process.cwd());
+  if (!configPath) {
+    throw new Error(
+      `Could not find "${configFileNames["glob"]}" in the current directory.`
+    );
+  }
   if (configPath.endsWith(".json")) {
     rawConfig = JSON.parse(fs.readFileSync(configPath, "utf-8"));
   } else {
@@ -36,17 +59,33 @@ async function parseConfig(cwd = process.cwd()) {
   return result.data;
 }
 async function parseConfigCli() {
+  logger.setScope("Config");
   let config;
   try {
-    config = await parseConfig();
+    if (configExists(process.cwd())) {
+      config = await parseConfig();
+    } else {
+      logger.error(
+        `Config not found. Use ${chalk.cyan("peakflow config")} to create a config file in your project root, or manually create one yourself.`,
+        logger.newLine,
+        `Accepted configs: ${configFileNames.glob}`
+      );
+      process.exit(1);
+    }
   } catch (err) {
-    logger.setScope("Config");
     logger.error("Failed to parse config:", err);
     process.exit(1);
   }
   return config;
 }
 export {
+  configExists,
+  configFileNames,
+  defaultConfigFileName,
+  defaultConfigFileType,
+  findConfigPath,
   parseConfig,
-  parseConfigCli
+  parseConfigCli,
+  resolveAllConfigPaths,
+  resolveConfigPath
 };

@@ -2,28 +2,56 @@ import { configSchema, type PeakflowConfig } from "peakflow/config";
 import { createJiti } from "jiti";
 import fs from "fs";
 import path from "path";
+import chalk from "chalk";
 import logger from "../helpers/logger.js";
 
-export async function parseConfig(
-  cwd: string = process.cwd(),
-): Promise<PeakflowConfig> {
-  const fileNames = [
-    "peakflow.config.ts",
-    "peakflow.config.js",
-    "peakflow.config.mjs",
-    "peakflow.config.json",
-  ];
+export type ConfigFileType = "ts" | "js" | "mjs" | "json" | "glob";
+export type ConfigFiles = Record<ConfigFileType, string>;
 
-  const filePaths = fileNames.map((name) => path.resolve(cwd, name));
-  const configPath = filePaths.find((path) => fs.existsSync(path));
+export const configFileNames: ConfigFiles = {
+  ts: "peakflow.config.ts",
+  js: "peakflow.config.js",
+  mjs: "peakflow.config.mjs",
+  json: "peakflow.config.json",
+  glob: "peakflow.config.{ts|js|mjs|json}",
+};
+
+export const defaultConfigFileType = "ts";
+export const defaultConfigFileName = configFileNames[defaultConfigFileType];
+
+export function resolveConfigPath(type: ConfigFileType, dir: string): string {
+  return path.resolve(dir, configFileNames[type]) as string;
+}
+
+export function resolveAllConfigPaths(dir: string): ConfigFiles {
+  const resolved: Partial<ConfigFiles> = {};
+  for (const type in configFileNames) {
+    resolved[type as ConfigFileType] = resolveConfigPath(
+      type as ConfigFileType,
+      dir,
+    );
+  }
+  return resolved as ConfigFiles;
+}
+
+export function findConfigPath(dir: string): string | undefined {
+  const matches = fs.globSync(path.resolve(dir, configFileNames.glob));
+  return matches[0];
+}
+
+export function configExists(dir: string): boolean {
+  return fs.globSync(path.resolve(dir, configFileNames.glob)).length > 0;
+}
+
+export async function parseConfig(): Promise<PeakflowConfig> {
+  let rawConfig: any;
+  const configPath = findConfigPath(process.cwd());
 
   if (!configPath) {
     throw new Error(
-      `Could not find peakflow.config.ts in the current directory.`,
+      `Could not find "${configFileNames["glob"]}" in the current directory.`,
     );
   }
-
-  let rawConfig: any;
 
   if (configPath.endsWith(".json")) {
     rawConfig = JSON.parse(fs.readFileSync(configPath, "utf-8"));
@@ -47,12 +75,22 @@ export async function parseConfig(
 }
 
 export async function parseConfigCli(): Promise<PeakflowConfig> {
+  logger.setScope("Config");
+
   let config: PeakflowConfig;
 
   try {
-    config = await parseConfig();
+    if (configExists(process.cwd())) {
+      config = await parseConfig();
+    } else {
+      logger.error(
+        `Config not found. Use ${chalk.cyan("peakflow config")} to create a config file in your project root, or manually create one yourself.`,
+        logger.newLine,
+        `Accepted configs: ${configFileNames.glob}`,
+      );
+      process.exit(1);
+    }
   } catch (err) {
-    logger.setScope("Config");
     logger.error("Failed to parse config:", err);
     process.exit(1);
   }

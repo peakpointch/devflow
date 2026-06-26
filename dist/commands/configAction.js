@@ -1,16 +1,41 @@
 import fs from "fs";
 import path from "path";
 import logger from "../helpers/logger.js";
-function configAction(filePath) {
-  if (fs.existsSync(path.resolve(filePath))) {
-    logger.warn("Config", `A "${filePath}" config file already exists.`);
+import {
+  defaultConfigFileType,
+  defaultConfigFileName,
+  findConfigPath,
+  configFileNames,
+  resolveConfigPath
+} from "../config/parse.js";
+function configAction() {
+  logger.scope = "Config";
+  const existingPath = findConfigPath(process.cwd());
+  if (existingPath) {
+    logger.warn(
+      `A "${configFileNames.glob}" config file already exists: ${existingPath}`
+    );
     return;
   }
-  const template = fs.readFileSync(
-    path.resolve(process.cwd(), "./template.confit.ts")
+  const configPath = resolveConfigPath(defaultConfigFileType, process.cwd());
+  const templatePath = path.resolve(
+    import.meta.dirname,
+    "../../src/config/template.config.ts"
   );
-  fs.writeFileSync(path.resolve(filePath), template);
-  logger.info("Config", `${filePath} created successfully`);
+  try {
+    fs.copyFileSync(templatePath, configPath, fs.constants.COPYFILE_EXCL);
+    logger.info(
+      `Created ${defaultConfigFileName} successfully at ${configPath}`
+    );
+  } catch (err) {
+    if (err.code === "EEXIST") {
+      logger.warn(
+        `A "${defaultConfigFileName}" config file already exists: ${configPath}`
+      );
+    } else {
+      logger.error("Failed to create config file.\n", err);
+    }
+  }
 }
 export {
   configAction

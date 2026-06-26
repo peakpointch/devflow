@@ -1,23 +1,21 @@
 import { defineConfig } from "peakflow/config";
-var template_config_ts_default = defineConfig({
+
+export default defineConfig({
   repository: {
     owner: "username",
-    name: "project"
+    name: "project",
   },
   server: {
     webflowSubdomain: "YOUR_WEBFLOW_SUBDOMAIN",
-    port: 3e3,
+    port: 3000,
     livereload: true,
-    watchList: ["./src/"]
+    watchList: ["./src/"],
   },
   build: {
     modules: ["./src/app.ts"],
-    outdir: "./dist"
+    outdir: "./dist",
   },
-  environments: {
+  environments: [
     /* Add your own environments here. Learn more running 'peakflow help config' */
-  }
+  ],
 });
-export {
-  template_config_ts_default as default
-};
