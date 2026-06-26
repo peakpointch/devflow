@@ -1,7 +1,6 @@
 import { buildProd } from "../build.js";
-import { parseConfig, parseConfigAction } from "../config/parse.js";
+import { parseConfigAction } from "../config/parse.js";
 import logger from "../helpers/logger.js";
-import { PeakflowConfig } from "peakflow/config";
 
 export async function buildAction() {
   const config = await parseConfigAction();

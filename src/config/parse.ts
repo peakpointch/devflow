@@ -43,15 +43,13 @@ export function configExists(dir: string): boolean {
   return fs.globSync(path.resolve(dir, configFileNames.glob)).length > 0;
 }
 
-export async function parseConfig(): Promise<PeakflowConfig> {
+/**
+ * Parse config at `configPath`.
+ * @param configPath Verified and fully resolved path to a `peakflow.config.{ts|js|mjs|json}` config file.
+ * @returns The sanitized and fully typed config as a promise.
+ */
+export async function parseConfig(configPath: string): Promise<PeakflowConfig> {
   let rawConfig: any;
-  const configPath = findConfigPath(process.cwd());
-
-  if (!configPath) {
-    throw new Error(
-      `Could not find "${configFileNames["glob"]}" in the current directory.`,
-    );
-  }
 
   if (configPath.endsWith(".json")) {
     rawConfig = JSON.parse(fs.readFileSync(configPath, "utf-8"));
@@ -64,7 +62,7 @@ export async function parseConfig(): Promise<PeakflowConfig> {
   const result = configSchema.safeParse(rawConfig);
 
   if (!result.success) {
-    const message = ["Invalid peakflow.config.ts structure:"];
+    const message = ["Invalid config structure:"];
     result.error.issues.forEach((issue) => {
       message.push(`  - ${issue.path.join(".")}: ${issue.message}`);
     });
@@ -80,8 +78,9 @@ export async function parseConfigAction(): Promise<PeakflowConfig> {
   let config: PeakflowConfig;
 
   try {
-    if (configExists(process.cwd())) {
-      config = await parseConfig();
+    const configPath = findConfigPath(process.cwd());
+    if (configPath) {
+      config = await parseConfig(configPath);
     } else {
       logger.error(
         `Config not found. Use ${chalk.cyan("peakflow config")} to create a config file in your project root, or manually create one yourself.`,
