@@ -1,7 +1,5 @@
 import { buildProd } from "../build.js";
-import {
-  parseConfigCli as parseConfigAction
-} from "../config/parse.js";
+import { parseConfigAction } from "../config/parse.js";
 import logger from "../helpers/logger.js";
 async function buildAction() {
   const config = await parseConfigAction();

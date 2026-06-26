@@ -58,7 +58,7 @@ async function parseConfig() {
   }
   return result.data;
 }
-async function parseConfigCli() {
+async function parseConfigAction() {
   logger.setScope("Config");
   let config;
   try {
@@ -85,7 +85,7 @@ export {
   defaultConfigFileType,
   findConfigPath,
   parseConfig,
-  parseConfigCli,
+  parseConfigAction,
   resolveAllConfigPaths,
   resolveConfigPath
 };

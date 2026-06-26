@@ -74,7 +74,7 @@ export async function parseConfig(): Promise<PeakflowConfig> {
   return result.data;
 }
 
-export async function parseConfigCli(): Promise<PeakflowConfig> {
+export async function parseConfigAction(): Promise<PeakflowConfig> {
   logger.setScope("Config");
 
   let config: PeakflowConfig;

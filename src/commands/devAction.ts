@@ -2,7 +2,7 @@ import chokidar from "chokidar";
 import events from "events";
 
 import logger from "../helpers/logger.js";
-import { parseConfigCli as parseConfigAction } from "../config/parse.js";
+import { parseConfigAction } from "../config/parse.js";
 import { buildDev } from "../build.js";
 import { startWebflowProxy } from "../server.js";
 

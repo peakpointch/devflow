@@ -1,8 +1,5 @@
 import { buildProd } from "../build.js";
-import {
-  parseConfig,
-  parseConfigCli as parseConfigAction,
-} from "../config/parse.js";
+import { parseConfig, parseConfigAction } from "../config/parse.js";
 import logger from "../helpers/logger.js";
 import { PeakflowConfig } from "peakflow/config";
 
