@@ -9,7 +9,7 @@ const configFileNames = {
   js: "peakflow.config.js",
   mjs: "peakflow.config.mjs",
   json: "peakflow.config.json",
-  glob: "peakflow.config.{ts|js|mjs|json}"
+  glob: "peakflow.config.{ts,js,mjs,json}"
 };
 const defaultConfigFileType = "ts";
 const defaultConfigFileName = configFileNames[defaultConfigFileType];
@@ -58,6 +58,7 @@ async function parseConfigAction() {
   try {
     const configPath = findConfigPath(process.cwd());
     if (configPath) {
+      logger.debug("Found config at:", configPath);
       config = await parseConfig(configPath);
     } else {
       logger.error(

@@ -13,7 +13,7 @@ export const configFileNames: ConfigFiles = {
   js: "peakflow.config.js",
   mjs: "peakflow.config.mjs",
   json: "peakflow.config.json",
-  glob: "peakflow.config.{ts|js|mjs|json}",
+  glob: "peakflow.config.{ts,js,mjs,json}",
 };
 
 export const defaultConfigFileType = "ts";
@@ -80,6 +80,7 @@ export async function parseConfigAction(): Promise<PeakflowConfig> {
   try {
     const configPath = findConfigPath(process.cwd());
     if (configPath) {
+      logger.debug("Found config at:", configPath);
       config = await parseConfig(configPath);
     } else {
       logger.error(
