@@ -1,19 +1,20 @@
-import degit from "degit";
 import fs from "fs-extra";
 import path from "path";
+import { downloadTemplate } from "giget";
 import logger from "../helpers/logger.js";
 
 export async function initAction(projectName: string) {
+  logger.setScope("Init");
+  logger.info(`Initializing project: ${projectName}...`);
+
   const targetDir = path.join(process.cwd(), projectName);
 
-  logger.info("Init", `Initializing project: ${projectName}...`);
-
   try {
-    const emitter = degit("peakpointch/template", {
-      cache: false,
+    await downloadTemplate("github:peakpointch/template", {
+      dir: targetDir,
+      preferOffline: false,
       force: true,
     });
-    await emitter.clone(targetDir);
 
     const pkgPath = path.join(targetDir, "package.json");
     if (await fs.pathExists(pkgPath)) {
@@ -22,10 +23,10 @@ export async function initAction(projectName: string) {
       await fs.writeJson(pkgPath, pkg, { spaces: 2 });
     }
 
-    logger.info("Init", `Project ${projectName} created successfully!`);
+    logger.info(`Project ${projectName} created successfully!`);
     process.exit(0);
   } catch (err) {
-    logger.error("Init", "Failed to initialize project!\n", err);
+    logger.error("Failed to initialize project!\n", err);
     process.exit(1);
   }
 }
