@@ -17,7 +17,7 @@ export function configAction(): void {
     logger.warn(
       `A "${configFileNames.glob}" config file already exists: ${existingPath}`,
     );
-    return;
+    process.exit(0);
   }
 
   const configPath = resolveConfigPath(defaultConfigFileType, process.cwd());
@@ -36,8 +36,10 @@ export function configAction(): void {
       logger.warn(
         `A "${defaultConfigFileName}" config file already exists: ${configPath}`,
       );
+      process.exit(0);
     } else {
       logger.error("Failed to create config file.\n", err);
+      process.exit(1);
     }
   }
 }
