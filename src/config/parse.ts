@@ -85,7 +85,7 @@ export async function parseConfigAction(): Promise<PeakflowConfig> {
     } else {
       logger.error(
         `Config not found. Use ${chalk.cyan("peakflow config")} to create a config file in your project root, or manually create one yourself.`,
-        logger.newLine,
+        logger.nextLine,
         `Accepted configs: ${configFileNames.glob}`,
       );
       process.exit(1);

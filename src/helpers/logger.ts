@@ -31,7 +31,11 @@ export class CliLogger {
   }
 
   public get newLine(): string {
-    return "\n" + this.indent;
+    return "\n";
+  }
+
+  public get nextLine(): string {
+    return this.newLine + this.indent;
   }
 
   public setScope(scope: string) {
