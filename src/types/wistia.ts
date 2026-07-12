@@ -1,6 +1,7 @@
 export interface WistiaMediaResponse {
   media: Media;
   options: Record<string, unknown>;
+  error?: true;
 }
 
 export interface Media {
