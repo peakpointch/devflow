@@ -1,9 +1,11 @@
 import chalk from "chalk";
 import log, { type LogLevelNames } from "loglevel";
 
+export type LogLevelNumber = 0 | 1 | 2 | 3 | 4 | 5;
+
 export class CliLogger {
   public static instance: CliLogger;
-  private logger: log.Logger;
+  public logger: log.Logger;
   private _scope: string = "Scope";
 
   private constructor() {
@@ -42,8 +44,12 @@ export class CliLogger {
     this.scope = scope;
   }
 
-  public setLevel(level: LogLevelNames): void {
+  public setLevel(level: LogLevelNames | LogLevelNumber): void {
     this.logger.setLevel(level);
+  }
+
+  public getLevel(): LogLevelNumber {
+    return this.logger.getLevel();
   }
 
   public trace(...msg: any[]): void {

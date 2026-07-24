@@ -35,6 +35,9 @@ class CliLogger {
   setLevel(level) {
     this.logger.setLevel(level);
   }
+  getLevel() {
+    return this.logger.getLevel();
+  }
   trace(...msg) {
     this.logger.trace(chalk.cyan(this.scope), ...msg);
   }
