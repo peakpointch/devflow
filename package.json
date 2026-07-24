@@ -10,10 +10,15 @@
     "peakflow": "./dist/cli.js"
   },
   "scripts": {
-    "dev": "nodemon",
     "build": "npm run --silent build:cli && npm run --silent build:extension",
+    "build:dev": "npm run --silent build:cli:dev && npm run --silent build:extension:dev",
     "build:cli": "tsx ./scripts/build-cli.ts",
-    "build:extension": "tsx ./scripts/build-extension.ts"
+    "build:cli:dev": "tsx ./scripts/build-cli.ts --env development",
+    "build:extension": "tsx ./scripts/build-extension.ts",
+    "build:extension:dev": "tsx ./scripts/build-extension.ts --env development",
+    "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js",
+    "test:verbose": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --verbose",
+    "test:watch": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --watch"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.2.2",
