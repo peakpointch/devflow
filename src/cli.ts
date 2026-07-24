@@ -2,11 +2,14 @@
 
 import { Command } from "commander";
 
+import { initialize } from "./helpers/initialize.js";
 import { initAction } from "./commands/initAction.js";
 import { configAction } from "./commands/configAction.js";
 import { devAction } from "./commands/devAction.js";
 import { buildAction } from "./commands/buildAction.js";
 import { wistiaAction } from "./commands/wistiaAction.js";
+
+initialize();
 
 const program = new Command();
 
