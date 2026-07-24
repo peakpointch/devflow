@@ -521,7 +521,7 @@ export function editDotenvFile(
   variables: DotenvVariableMap,
   options?: PartialDeep<DotenvOptions>,
 ): { success: boolean; errors: string[] } {
-  let content;
+  let content: string;
 
   try {
     content = fs.readFileSync(path, { encoding: "utf8" });
