@@ -1007,13 +1007,9 @@ describe(editDotenvFile.name, () => {
   test("creates a missing .env file", () => {
     const envPath = createEnvPath();
 
-    editDotenvFile(
-      envPath,
-      {
-        FOO: "bar",
-      },
-      { silent: true },
-    );
+    editDotenvFile(envPath, {
+      FOO: "bar",
+    });
 
     expect(fs.readFileSync(envPath, "utf8")).toBe("FOO=bar");
   });
@@ -1028,7 +1024,7 @@ describe(editDotenvFile.name, () => {
       {
         FOO: "new",
       },
-      { ...update, silent: true },
+      { ...update },
     );
 
     expect(fs.readFileSync(envPath, "utf8")).toBe("FOO=new\nBAR=keep");
