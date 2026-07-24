@@ -8,13 +8,8 @@
     // Environment Settings
     "module": "NodeNext",
     "target": "ES2022",
-    "lib": [
-      "dom"
-    ],
-    "types": [
-      "node",
-      "chrome"
-    ],
+    "lib": ["dom"],
+    "types": ["node", "chrome"],
 
     // Stricter Typechecking Options
     "noUncheckedIndexedAccess": true,
