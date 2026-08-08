@@ -1,6 +1,7 @@
 import chalk from "chalk";
 import logger from "./logger.js";
 import { capitalize } from "./utils.js";
+import { PeakflowClient } from "../cloud/api.js";
 import {
   editDotenvContent,
   editDotenvFile,
@@ -89,9 +90,23 @@ function selectAccount(accounts, providerId) {
   }
   return selectedAccount;
 }
+async function connectIntegration(providerId, options) {
+  const cloud = new PeakflowClient(options);
+  const accounts = await cloud.accounts.list();
+  const selectedAccount = selectAccount(accounts, providerId);
+  logger.info(`Fetching ${capitalize(providerId)} token...`);
+  const token = await cloud.accounts.accessToken(selectedAccount);
+  storeCredentials({
+    PEAKFLOW_ACCESS_TOKEN: options.accessToken,
+    [getTokenVarName(providerId)]: token.accessToken
+  });
+  const accountInfo = await cloud.accounts.info(selectedAccount.accountId);
+  greetAccount(selectedAccount, accountInfo);
+}
 export {
   PEAKFLOW_ACCESS_TOKEN,
   assertAccessToken,
+  connectIntegration,
   getBearerHeaders,
   getBearerToken,
   getIntegrationToken,
