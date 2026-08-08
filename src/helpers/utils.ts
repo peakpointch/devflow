@@ -70,7 +70,7 @@ export function errorToString(error: unknown): string {
   ) {
     return "Unknown error";
   } else if (typeof error === "object") {
-    const key = firstValidKey(error, ["code", "error", "message"]);
+    const key = firstValidKey(error, ["code", "error"]);
     const value = firstValidKey(error, [
       "message",
       "error_description",
