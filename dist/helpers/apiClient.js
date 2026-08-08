@@ -19,9 +19,7 @@ class ApiClient {
   }
   requireData(result, errorMessage, options) {
     if (result.error || result.data === null || result.data === void 0) {
-      logger.error(errorMessage, errorToString(result.error));
-      result.data = null;
-      process.exit(1);
+      throw new Error(`${errorMessage} ${errorToString(result.error)}`);
     }
     return options?.callback && result.data !== null ? options.callback(result.data) : result.data;
   }

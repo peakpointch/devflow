@@ -6,16 +6,18 @@ import {
   getBearerToken,
 } from "../helpers/auth.js";
 import type { TokenResponse } from "../types/auth.js";
+import { errorToString } from "../helpers/utils.js";
 
 export async function authLoginAction() {
   logger.setScope("Login");
 
   try {
+    // Check if we are already authenticated
     const accessToken = getBearerToken();
     await connectIntegration("webflow", { accessToken });
     process.exit(0);
-  } catch {
-    logger.info();
+  } catch (err) {
+    // Continue with authentication
   }
 
   try {
@@ -51,7 +53,7 @@ export async function authLoginAction() {
 
     await pollForToken(device_code, interval, onSuccess);
   } catch (err) {
-    logger.error(`${(err as Error).name}:`, (err as Error).message);
+    logger.error(errorToString(err))
     process.exit(1);
   }
 }

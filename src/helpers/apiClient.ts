@@ -36,9 +36,7 @@ export abstract class ApiClient {
     options?: ReturnDataOptions<TData, TResult>,
   ): TResult {
     if (result.error || result.data === null || result.data === undefined) {
-      logger.error(errorMessage, errorToString(result.error));
-      result.data = null;
-      process.exit(1);
+      throw new Error(`${errorMessage} ${errorToString(result.error)}`);
     }
 
     return options?.callback && result.data !== null

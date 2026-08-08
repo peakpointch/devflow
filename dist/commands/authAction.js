@@ -5,14 +5,14 @@ import {
   connectIntegration,
   getBearerToken
 } from "../helpers/auth.js";
+import { errorToString } from "../helpers/utils.js";
 async function authLoginAction() {
   logger.setScope("Login");
   try {
     const accessToken = getBearerToken();
     await connectIntegration("webflow", { accessToken });
     process.exit(0);
-  } catch {
-    logger.info();
+  } catch (err) {
   }
   try {
     const { data, error } = await authClient.device.code({
@@ -42,7 +42,7 @@ async function authLoginAction() {
     };
     await pollForToken(device_code, interval, onSuccess);
   } catch (err) {
-    logger.error(`${err.name}:`, err.message);
+    logger.error(errorToString(err));
     process.exit(1);
   }
 }
