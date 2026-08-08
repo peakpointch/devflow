@@ -1,0 +1,151 @@
+import chalk from "chalk";
+
+import logger from "./logger.js";
+import { capitalize } from "./utils.js";
+import {
+  DotenvVariableMap,
+  editDotenvContent,
+  editDotenvFile,
+  getDotenvPath,
+} from "./dotenv.js";
+import type {
+  AccessToken,
+  AccountInfo,
+  ProviderId,
+  UserAccount,
+} from "../types/auth.js";
+
+export const PEAKFLOW_ACCESS_TOKEN = "PEAKFLOW_ACCESS_TOKEN" as const;
+
+/**
+ * Check if `token` is a valid `AccessToken`
+ * @param token The token to check
+ * @returns `true` if valid, `false` otherwise
+ */
+export function isValidAccessToken(
+  token?: string | null | undefined,
+): token is AccessToken {
+  return typeof token === "string" && /^[a-zA-Z0-9]+$/.test(token);
+}
+
+/**
+ * Assert that `token` is a valid `AccessToken`
+ * @param token The token to assert
+ */
+export function assertAccessToken(
+  token?: string | null | undefined,
+): asserts token is AccessToken {
+  if (!isValidAccessToken(token)) {
+    throw new TypeError(`Invalid access token`);
+  }
+}
+
+/**
+ * Get the bearer authorization headers
+ * @throws `Error` on an invalid token
+ */
+export function getBearerHeaders(token?: string | null | undefined) {
+  assertAccessToken(token);
+  return {
+    Authorization: `Bearer ${token}`,
+  };
+}
+
+/**
+ * Gets the bearer token from the .env file
+ * @throws `Error` on an invalid token
+ */
+export function getBearerToken(): AccessToken {
+  const token = process.env[PEAKFLOW_ACCESS_TOKEN] || "";
+  assertAccessToken(token);
+  return token;
+}
+
+/**
+ * Constructs the dotenv variable name of a stored provider token
+ */
+export function getTokenVarName(providerId: ProviderId): string {
+  return `${providerId.toUpperCase()}_ACCESS_TOKEN`;
+}
+
+/**
+ * Gets an integration token from the .env file
+ * @throws `Error` on an invalid token
+ */
+export function getIntegrationToken(providerId: ProviderId): string {
+  const token = process.env[getTokenVarName(providerId)] || "";
+  assertAccessToken(token);
+  return token;
+}
+
+export function greetAccount(
+  account: UserAccount,
+  accountInfo: AccountInfo | null,
+): void {
+  if (!accountInfo) return;
+
+  const provider = capitalize(account.providerId);
+
+  logger.getLevel() <= 2 && console.log();
+  logger.info(
+    "Authorization successful!",
+    logger.newLine,
+    logger.nextLine,
+    `Welcome to Peakflow, ${accountInfo.user.email}! 👋`,
+    logger.newLine,
+    logger.nextLine,
+    `✓ You are authenticated via Peakflow Cloud.`,
+    logger.nextLine,
+    `✓ Your ${provider} account is connected and ready to go.`,
+    logger.newLine,
+  );
+}
+
+function storeCredentials(credentials: DotenvVariableMap): void {
+  logger.info("Updating environment variables...");
+
+  const dotenvPath = getDotenvPath();
+
+  const { success, errors } = editDotenvFile(dotenvPath, credentials, {
+    update: true,
+  });
+
+  if (!success) {
+    for (const error of errors) {
+      logger.warn(error);
+    }
+
+    logger.error(
+      `Something went wrong while storing the access token.`,
+      logger.nextLine,
+      `You can store the token manually in your .env file:`,
+      logger.newLine,
+      logger.nextLine,
+      chalk.cyan(editDotenvContent("", credentials).content),
+    );
+    process.exit(1);
+  }
+}
+
+export function selectAccount(
+  accounts: UserAccount[],
+  providerId: ProviderId,
+): UserAccount {
+  const filteredAccounts = accounts.filter(
+    (acc) => acc.providerId === providerId,
+  );
+  const selectedAccount = filteredAccounts[0];
+
+  if (!filteredAccounts.length || !selectedAccount) {
+    logger.error(
+      `Integration not found. Please connect a ${providerId} account in your Peakflow Cloud dashboard.`,
+    );
+    process.exit(1);
+  } else if (filteredAccounts.length > 1) {
+    logger.warn(
+      `You have connected multiple ${providerId} accounts. This feature is not supported yet. You can continue with the first account`,
+    );
+  }
+
+  return selectedAccount as UserAccount;
+}
