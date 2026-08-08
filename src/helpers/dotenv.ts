@@ -529,7 +529,7 @@ export function editDotenvFile(
     if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
       throw error;
     } else {
-      content = ""
+      content = "";
     }
   }
 
