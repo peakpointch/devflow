@@ -37,6 +37,28 @@ export function isPlainObject(val: unknown): val is PlainObject {
   );
 }
 
+function getValues<T extends object>(
+  obj: T,
+  keys: Array<string | null | undefined>,
+): Array<T[keyof T]> {
+  let res = [];
+  for (const key of keys) {
+    if (key && key in obj) {
+      res.push(obj[key as keyof T]);
+    }
+  }
+  return res;
+}
+
+function firstValidKey<T extends string>(obj: object, keys: T[]): T | null {
+  for (const key of keys) {
+    if (key && key in obj) {
+      return key;
+    }
+  }
+  return null;
+}
+
 /**
  * Converts any error to a string.
  */
@@ -48,11 +70,13 @@ export function errorToString(error: unknown): string {
   ) {
     return "Unknown error";
   } else if (typeof error === "object") {
-    if ("message" in error) return `${error.message}`;
-    if ("code" in error) return `${error.code}`;
-    if ("status" in error && "statusText" in error)
-      return `${error.status} ${error.statusText}`;
-    return JSON.stringify(error);
+    const key = firstValidKey(error, ["code", "error", "message"]);
+    const value = firstValidKey(error, [
+      "message",
+      "error_description",
+      "statusText",
+    ]);
+    return getValues(error, [key, value]).join(": ");
   } else {
     return `${error}`;
   }
