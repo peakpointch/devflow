@@ -8,14 +8,27 @@ import { configAction } from "./commands/configAction.js";
 import { devAction } from "./commands/devAction.js";
 import { buildAction } from "./commands/buildAction.js";
 import { wistiaAction } from "./commands/wistiaAction.js";
+import {
+  authLoginAction,
+  authLogoutAction,
+  authStatusAction,
+} from "./commands/authAction.js";
+import {
+  codeListAction,
+  codePublishAction,
+  codeUnpublishAction,
+} from "./commands/codeAction.js";
 
 initialize();
 
 const program = new Command();
 
+const auth = program.command("auth").description("Manage authentication");
+const code = program.command("code").description("Manage Webflow custom code");
+
 program
   .name("peakflow")
-  .description("Peakflow CLI tool for managing webflow custom code projects.")
+  .description("Manage your Webflow custom code projects.")
   .version("0.1.0");
 
 program
@@ -38,6 +51,39 @@ program
   .command("build")
   .description("Build the production bundle")
   .action(buildAction);
+
+auth
+  .command("login")
+  .description("Log in and store credentials")
+  .action(authLoginAction);
+
+auth
+  .command("logout")
+  .description("Log out and remove stored credentials")
+  .action(authLogoutAction);
+
+auth
+  .command("status")
+  .description("Show current authentication status")
+  .action(authStatusAction);
+
+code
+  .command("publish")
+  .description("Publish custom code modules to your Webflow site")
+  .option("--dry-run", "Preview changes without publishing them")
+  .action(codePublishAction);
+
+code
+  .command("unpublish")
+  .description("Unpublish all custom code modules from your Webflow site")
+  .action(codeUnpublishAction);
+
+code
+  .command("list")
+  .description("List all published custom code modules")
+  .option("--json", "Output as JSON")
+  .option("--verbose", "Output all available information")
+  .action(codeListAction);
 
 program
   .command("wistia")
