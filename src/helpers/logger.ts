@@ -1,5 +1,6 @@
 import chalk from "chalk";
 import log, { type LogLevelNames } from "loglevel";
+import { PlainObject } from "../types/utils.js";
 
 export type LogLevelNumber = 0 | 1 | 2 | 3 | 4 | 5;
 
@@ -70,6 +71,18 @@ export class CliLogger {
 
   public error(...msg: any[]): void {
     this.logger.error(chalk.red(this.scope), ...msg);
+  }
+
+  public var(str: string): string {
+    return chalk.cyan(str);
+  }
+
+  public num(num: number): string {
+    return chalk.cyan(num);
+  }
+
+  public json(obj: object): string {
+    return logger.newLine + JSON.stringify(obj, undefined, 4);
   }
 }
 

@@ -53,6 +53,15 @@ class CliLogger {
   error(...msg) {
     this.logger.error(chalk.red(this.scope), ...msg);
   }
+  var(str) {
+    return chalk.cyan(str);
+  }
+  num(num) {
+    return chalk.cyan(num);
+  }
+  json(obj) {
+    return logger.newLine + JSON.stringify(obj, void 0, 4);
+  }
 }
 const logger = CliLogger.getInstance();
 var logger_default = logger;
