@@ -53,7 +53,7 @@ export async function authLoginAction() {
 
     await pollForToken(device_code, interval, onSuccess);
   } catch (err) {
-    logger.error(errorToString(err))
+    logger.error(errorToString(err));
     process.exit(1);
   }
 }
