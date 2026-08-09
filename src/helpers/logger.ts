@@ -82,7 +82,7 @@ export class CliLogger {
   }
 
   public json(obj: object): string {
-    return logger.newLine + JSON.stringify(obj, undefined, 4);
+    return JSON.stringify(obj, undefined, 4);
   }
 }
 

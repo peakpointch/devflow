@@ -60,7 +60,7 @@ class CliLogger {
     return chalk.cyan(num);
   }
   json(obj) {
-    return logger.newLine + JSON.stringify(obj, void 0, 4);
+    return JSON.stringify(obj, void 0, 4);
   }
 }
 const logger = CliLogger.getInstance();
