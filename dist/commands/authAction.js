@@ -66,7 +66,7 @@ async function pollForToken(deviceCode, interval, onSuccess) {
               break;
             case "slow_down":
               pollingInterval += 5;
-              logger.warn(`Slowing down polling to ${pollingInterval}s`);
+              logger.warn(`Slowing down polling to ${logger.num(pollingInterval)}s`);
               break;
             case "access_denied":
               logger.error("Access was denied by the user");

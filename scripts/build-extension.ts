@@ -62,7 +62,7 @@ async function buildExtension(environment: NodeEnv = "production") {
 
   logger.setScope("Build");
   logger.info(
-    `Extension: Compiled ${entryPoints.length} files to ${chalk.cyan(outdir)} for ${chalk.cyan(environment)}.`,
+    `Extension: Compiled ${logger.num(entryPoints.length)} files to ${logger.var(outdir)} for ${logger.var(environment)}.`,
   );
 }
 

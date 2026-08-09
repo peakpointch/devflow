@@ -41,7 +41,7 @@ async function buildCli(environment: NodeEnv = "production") {
 
   logger.setScope("Build");
   logger.info(
-    `CLI: Compiled ${entryPoints.length} files to ${chalk.cyan(outdir)} for ${chalk.cyan(environment)}.`,
+    `CLI: Compiled ${logger.num(entryPoints.length)} files to ${logger.var(outdir)} for ${logger.var(environment)}.`,
   );
 }
 
