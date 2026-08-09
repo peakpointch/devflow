@@ -1,0 +1,60 @@
+import { PeakflowModule, PeakflowRepo } from "peakflow/config";
+import { Webflow } from "webflow-api";
+
+import logger from "../helpers/logger.js";
+import {
+  assertFileName,
+  generateCdnUrl,
+  getDisplayName,
+  getModuleHash,
+} from "../config/modules.js";
+import { generateIntegrityHash } from "../helpers/hash.js";
+
+/**
+ * Build a register request for each unique module
+ */
+export function generateRegisterScripts(
+  modules: PeakflowModule[],
+  repo: PeakflowRepo,
+): Webflow.CustomCodeHostedRequest[] {
+  return modules.map((mod) => {
+    assertFileName(mod.file);
+    const cdnUrl = generateCdnUrl(repo, mod.version, mod.file);
+    return {
+      canCopy: true,
+      displayName: getDisplayName(mod.file) as string,
+      hostedLocation: cdnUrl,
+      integrityHash: generateIntegrityHash(cdnUrl),
+      version: mod.version,
+    };
+  });
+}
+
+/**
+ * Build an upsert request for each script inside all modules
+ */
+export function generateUpsertScripts(
+  modules: PeakflowModule[],
+  scriptsByHash: Map<string, Webflow.CustomCodeHostedResponse>,
+  repo: PeakflowRepo,
+): Webflow.ScriptApply[] {
+  return modules.map((mod) => {
+    const scriptHash = getModuleHash(mod, repo);
+    const script = scriptsByHash.get(scriptHash);
+
+    if (!script?.id) {
+      logger.debug("Script that was found is invalid:", logger.newLine, script);
+      throw new Error("Cannot upsert unregistered script");
+    }
+
+    return {
+      id: script.id,
+      location: mod.file.endsWith(".css") ? "header" : "footer",
+      version: mod.version,
+      attributes: {
+        "data-peakflow-hmr": "true",
+        "data-peakflow-local": `dist/${mod.file}`,
+      },
+    };
+  });
+}
