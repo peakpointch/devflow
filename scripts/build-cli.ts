@@ -1,4 +1,3 @@
-import chalk from "chalk";
 import * as esbuild from "esbuild";
 import fs from "node:fs";
 import { parseArgs } from "node:util";

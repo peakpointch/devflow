@@ -8,7 +8,7 @@ async function buildAction() {
   try {
     buildProd(config);
     logger.info(
-      `Complete! Compiled ${config.build.modules.length} files to ${config.build.outdir}`
+      `Complete! Compiled ${logger.num(config.build.modules.length)} files to ${logger.var(config.build.outdir)}`
     );
   } catch (err) {
     logger.error("Failed to build!\n", err);

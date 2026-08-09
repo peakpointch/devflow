@@ -29,12 +29,12 @@ export function configAction(): void {
   try {
     fs.copyFileSync(templatePath, configPath, fs.constants.COPYFILE_EXCL);
     logger.info(
-      `Created ${defaultConfigFileName} successfully at ${configPath}`,
+      `Created ${logger.var(defaultConfigFileName)} successfully at ${logger.var(configPath)}`,
     );
   } catch (err: any) {
     if (err.code === "EEXIST") {
       logger.warn(
-        `A "${defaultConfigFileName}" config file already exists: ${configPath}`,
+        `A ${logger.var(defaultConfigFileName)} config file already exists: ${logger.var(configPath)}`,
       );
       process.exit(0);
     } else {

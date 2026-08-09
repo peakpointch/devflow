@@ -1,5 +1,4 @@
 import axios from "axios";
-import chalk from "chalk";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import events from "events";
@@ -146,7 +145,7 @@ export function startWebflowProxy(
 
         const result = replaceAssets(dataHtml, config);
 
-        scriptsRemovedLog = `Replaced ${result.removedCount} ${result.removedCount === 1 ? "asset" : "assets"}`;
+        scriptsRemovedLog = `Replaced ${logger.num(result.removedCount)} ${result.removedCount === 1 ? "asset" : "assets"}`;
         res.send(result.html);
       } else {
         res.send(_res.data);
@@ -165,7 +164,7 @@ export function startWebflowProxy(
       const endPref = Date.now();
       if (isPage) {
         logger.info(
-          `Page ${chalk.cyan(req.url)} took ${endPref - startPref}ms to fetch`,
+          `Page ${logger.var(req.url)} took ${logger.num(endPref - startPref)}ms to fetch`,
         );
       }
       if (scriptsRemovedLog) {

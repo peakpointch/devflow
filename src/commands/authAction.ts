@@ -44,7 +44,7 @@ export async function authLoginAction() {
       logger.nextLine,
       `Please visit: ${verification_uri_complete}`,
       logger.nextLine,
-      `Enter code: ${user_code}`,
+      `Enter code: ${logger.var(user_code)}`,
     );
 
     const onSuccess = async (data: TokenResponse) => {
@@ -101,7 +101,7 @@ async function pollForToken(
           }
         }
       } catch (err) {
-        logger.error(`${(err as Error).name}:`, (err as Error).message);
+        logger.error(errorToString(err))
         process.exit(1);
       }
 

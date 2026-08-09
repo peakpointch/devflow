@@ -4,7 +4,7 @@ import { downloadTemplate } from "giget";
 import logger from "../helpers/logger.js";
 async function initAction(projectName) {
   logger.setScope("Init");
-  logger.info(`Initializing project: ${projectName}...`);
+  logger.info(`Initializing project: ${logger.var(projectName)}...`);
   const targetDir = path.join(process.cwd(), projectName);
   try {
     await downloadTemplate("github:peakpointch/template", {
@@ -18,7 +18,7 @@ async function initAction(projectName) {
       pkg.name = projectName;
       await fs.writeJson(pkgPath, pkg, { spaces: 2 });
     }
-    logger.info(`Project ${projectName} created successfully!`);
+    logger.info(`Project ${logger.var(projectName)} created successfully!`);
     process.exit(0);
   } catch (err) {
     logger.error("Failed to initialize project!\n", err);

@@ -35,7 +35,7 @@ async function authLoginAction() {
       logger.nextLine,
       `Please visit: ${verification_uri_complete}`,
       logger.nextLine,
-      `Enter code: ${user_code}`
+      `Enter code: ${logger.var(user_code)}`
     );
     const onSuccess = async (data2) => {
       await connectIntegration("webflow", { accessToken: data2.access_token });
@@ -80,7 +80,7 @@ async function pollForToken(deviceCode, interval, onSuccess) {
           }
         }
       } catch (err) {
-        logger.error(`${err.name}:`, err.message);
+        logger.error(errorToString(err));
         process.exit(1);
       }
       setTimeout(poll, pollingInterval * 1e3);

@@ -1,5 +1,3 @@
-import chalk from "chalk";
-
 import logger from "./logger.js";
 import { capitalize } from "./utils.js";
 import { PeakflowClient } from "../cloud/api.js";
@@ -93,12 +91,12 @@ export function greetAccount(
     "Authorization successful!",
     logger.newLine,
     logger.nextLine,
-    `Welcome to Peakflow, ${accountInfo.user.email}! 👋`,
+    `Welcome to Peakflow, ${logger.var(accountInfo.user.email ?? "")}! 👋`,
     logger.newLine,
     logger.nextLine,
     `✓ You are authenticated via Peakflow Cloud.`,
     logger.nextLine,
-    `✓ Your ${provider} account is connected and ready to go.`,
+    `✓ Your ${logger.var(capitalize(provider))} account is connected and ready to go.`,
     logger.newLine,
   );
 }
@@ -123,7 +121,7 @@ function storeCredentials(credentials: DotenvVariableMap): void {
       `You can store the token manually in your .env file:`,
       logger.newLine,
       logger.nextLine,
-      chalk.cyan(editDotenvContent("", credentials).content),
+      logger.var(editDotenvContent("", credentials).content),
     );
     process.exit(1);
   }
@@ -140,12 +138,12 @@ export function selectAccount(
 
   if (!filteredAccounts.length || !selectedAccount) {
     logger.error(
-      `Integration not found. Please connect a ${providerId} account in your Peakflow Cloud dashboard.`,
+      `Integration not found. Please connect a ${logger.var(providerId)} account in your Peakflow Cloud dashboard.`,
     );
     process.exit(1);
   } else if (filteredAccounts.length > 1) {
     logger.warn(
-      `You have connected multiple ${providerId} accounts. This feature is not supported yet. You can continue with the first account`,
+      `You have connected multiple ${logger.var(providerId)} accounts. This feature is not supported yet. You can continue with the first account`,
     );
   }
 
@@ -160,7 +158,7 @@ export async function connectIntegration(
   const accounts = await cloud.accounts.list();
   const selectedAccount = selectAccount(accounts, providerId);
 
-  logger.info(`Fetching ${capitalize(providerId)} token...`);
+  logger.info(`Fetching ${logger.var(capitalize(providerId))} token...`);
 
   const token = await cloud.accounts.accessToken(selectedAccount);
 

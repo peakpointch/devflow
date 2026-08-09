@@ -1,8 +1,7 @@
-import { configSchema } from "peakflow/config";
-import { createJiti } from "jiti";
 import fs from "fs";
 import path from "path";
-import chalk from "chalk";
+import { configSchema } from "peakflow/config";
+import { createJiti } from "jiti";
 import logger from "../helpers/logger.js";
 const configFileNames = {
   ts: "peakflow.config.ts",
@@ -58,13 +57,13 @@ async function parseConfigAction() {
   try {
     const configPath = findConfigPath(process.cwd());
     if (configPath) {
-      logger.debug("Found config at:", configPath);
+      logger.debug("Found config at:", logger.var(configPath));
       config = await parseConfig(configPath);
     } else {
       logger.error(
-        `Config not found. Use ${chalk.cyan("peakflow config")} to create a config file in your project root, or manually create one yourself.`,
+        `Config not found. Use ${logger.var("peakflow config")} to create a config file in your project root, or manually create one yourself.`,
         logger.nextLine,
-        `Accepted configs: ${configFileNames.glob}`
+        `Accepted configs: ${logger.var(configFileNames.glob)}`
       );
       process.exit(1);
     }
