@@ -12,8 +12,11 @@ export function matchesGlob(pagePath: string, pattern: string): boolean {
 /**
  * Find all pages matching a list of glob patterns
  */
-export function matchPages(pages: Webflow.Page[], patterns: string[]): Webflow.Page[] {
-  return (pages).filter((page) =>
+export function matchPages(
+  pages: Webflow.Page[],
+  patterns: string[],
+): Webflow.Page[] {
+  return pages.filter((page) =>
     patterns.some((pattern) => matchesGlob(page.publishedPath ?? "", pattern)),
   );
 }

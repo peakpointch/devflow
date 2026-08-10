@@ -1,9 +1,5 @@
 import chalk from "chalk";
-import {
-  CliLogger,
-  type LogLevelName,
-  type LogLevelNumber,
-} from "./logger.js";
+import { CliLogger, type LogLevelName, type LogLevelNumber } from "./logger.js";
 
 export type TaskLogMethod = LogLevelName | "success" | null;
 
@@ -46,7 +42,7 @@ export class TaskLogger extends CliLogger {
     }
 
     const key = `${this.activeLogMethod}Scope`;
-    const scopeString = `[${this.rawScope}]`
+    const scopeString = `[${this.rawScope}]`;
 
     return this.colors[key] ? this.colors[key](scopeString) : scopeString;
   }

@@ -3,13 +3,7 @@ import chalk, { ChalkInstance } from "chalk";
 import { CliLogger, hex } from "./logger.js";
 
 export type HttpMethod =
-  | "GET"
-  | "POST"
-  | "PUT"
-  | "PATCH"
-  | "DELETE"
-  | "HEAD"
-  | "OPTIONS";
+  "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "HEAD" | "OPTIONS";
 
 export type HttpRequestLog = {
   method: HttpMethod;
@@ -124,4 +118,3 @@ export class HttpLogger extends CliLogger {
 }
 
 export const serverLogger = new HttpLogger("Server");
-

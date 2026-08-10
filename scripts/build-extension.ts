@@ -42,10 +42,8 @@ async function buildExtension(environment: NodeEnv = "production") {
     "src/extension/main.css",
   ];
 
-  logger.setLevel(1)
-  logger.info(
-    `Extension: Building ${environment} bundle...`,
-  );
+  logger.setLevel(1);
+  logger.info(`Extension: Building ${environment} bundle...`);
 
   await esbuild.build({
     bundle: true,

@@ -13,7 +13,7 @@ async function fetchWistiaMedia(id: string): Promise<WistiaMediaResponse> {
 }
 
 export async function wistiaAction(id: string): Promise<void> {
-  const logger = new TaskLogger("Wistia")
+  const logger = new TaskLogger("Wistia");
   try {
     const data = await fetchWistiaMedia(id);
 

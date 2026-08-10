@@ -8,7 +8,6 @@ import {
 import type { TokenResponse } from "../types/auth.js";
 import { errorToString } from "../helpers/utils.js";
 
-
 export async function authLoginAction() {
   authLogger.setScope("Login");
 
@@ -88,13 +87,17 @@ async function pollForToken(
               break;
             case "slow_down":
               pollingInterval += 5;
-              authLogger.warn(`Slowing down polling to ${authLogger.num(pollingInterval)}s`);
+              authLogger.warn(
+                `Slowing down polling to ${authLogger.num(pollingInterval)}s`,
+              );
               break;
             case "access_denied":
               authLogger.error("Access was denied by the user");
               process.exit(1);
             case "expired_token":
-              authLogger.error("The device code has expired. Please try again.");
+              authLogger.error(
+                "The device code has expired. Please try again.",
+              );
               process.exit(1);
             default:
               authLogger.error(error.error_description);
@@ -102,7 +105,7 @@ async function pollForToken(
           }
         }
       } catch (err) {
-        authLogger.error(errorToString(err))
+        authLogger.error(errorToString(err));
         process.exit(1);
       }
 
