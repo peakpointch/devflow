@@ -79,7 +79,15 @@ export function getIntegrationToken(providerId: ProviderId): string {
   return token;
 }
 
-export async function isAuthorized(accessToken: AccessToken): Promise<boolean> {
+export async function isAuthorized(): Promise<boolean> {
+  let accessToken: AccessToken;
+
+  try {
+    accessToken = getBearerToken();
+  } catch {
+    return false;
+  }
+
   const cloud = new PeakflowClient({ accessToken });
 
   try {
@@ -102,8 +110,7 @@ export function greetAccount(
 
   const provider = capitalize(account.providerId);
 
-  logger.getLevel() <= 2 && console.log();
-  logger.info(
+  logger.success(
     "Authorization successful!",
     logger.newLine,
     logger.nextLine,
