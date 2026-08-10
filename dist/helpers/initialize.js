@@ -3,7 +3,10 @@ import { logger } from "./taskLogger.js";
 import { getDotenvPath } from "./dotenv.js";
 import { parseNodeEnv } from "./utils.js";
 function initialize() {
-  const { parsed: dotenvOutput } = dotenv.config({ path: getDotenvPath(), quiet: true });
+  const { parsed: dotenvOutput } = dotenv.config({
+    path: getDotenvPath(),
+    quiet: true
+  });
   const injectedCount = Object.keys(dotenvOutput ?? {}).length;
   const env = parseNodeEnv("production");
   if (env === "development") {
@@ -14,7 +17,9 @@ function initialize() {
     logger.setLevel("info");
   }
   logger.setScope("Dotenv");
-  logger.info(`Injected env ${logger.num(`(${injectedCount})`)} from ${logger.var(".env")}`);
+  logger.info(
+    `Injected env ${logger.num(`(${injectedCount})`)} from ${logger.var(".env")}`
+  );
   logger.setScope("Peakflow");
   logger.debug("Log level:", logger.getLevel());
 }

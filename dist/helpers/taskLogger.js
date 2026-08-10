@@ -1,7 +1,5 @@
 import chalk from "chalk";
-import {
-  CliLogger
-} from "./logger.js";
+import { CliLogger } from "./logger.js";
 class TaskLogger extends CliLogger {
   static activeScope = "";
   inferScope;

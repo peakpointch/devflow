@@ -66,13 +66,17 @@ async function pollForToken(deviceCode, interval, onSuccess) {
               break;
             case "slow_down":
               pollingInterval += 5;
-              authLogger.warn(`Slowing down polling to ${authLogger.num(pollingInterval)}s`);
+              authLogger.warn(
+                `Slowing down polling to ${authLogger.num(pollingInterval)}s`
+              );
               break;
             case "access_denied":
               authLogger.error("Access was denied by the user");
               process.exit(1);
             case "expired_token":
-              authLogger.error("The device code has expired. Please try again.");
+              authLogger.error(
+                "The device code has expired. Please try again."
+              );
               process.exit(1);
             default:
               authLogger.error(error.error_description);
