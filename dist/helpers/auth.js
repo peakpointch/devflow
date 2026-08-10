@@ -1,6 +1,7 @@
 import { logger } from "./taskLogger.js";
 import { capitalize } from "./utils.js";
 import { PeakflowClient } from "../cloud/api.js";
+import { ApiError } from "./apiClient.js";
 import {
   editDotenvContent,
   editDotenvFile,
@@ -33,6 +34,18 @@ function getIntegrationToken(providerId) {
   const token = process.env[getTokenVarName(providerId)] || "";
   assertAccessToken(token);
   return token;
+}
+async function isAuthorized(accessToken) {
+  const cloud = new PeakflowClient({ accessToken });
+  try {
+    await cloud.accounts.list();
+    return true;
+  } catch (err) {
+    if (err instanceof ApiError && err.code === "unauthorized") {
+      return false;
+    }
+    throw err;
+  }
 }
 function greetAccount(account, accountInfo) {
   if (!accountInfo) return;
@@ -111,6 +124,7 @@ export {
   getIntegrationToken,
   getTokenVarName,
   greetAccount,
+  isAuthorized,
   isValidAccessToken,
   selectAccount
 };
