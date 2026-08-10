@@ -3,21 +3,32 @@ import { authLogger } from "../helpers/taskLogger.js";
 import {
   assertAccessToken,
   connectIntegration,
+  isAuthorized,
   getBearerToken,
 } from "../helpers/auth.js";
+import { getErrorMessage, errorToString } from "../helpers/utils.js";
 import type { TokenResponse } from "../types/auth.js";
-import { errorToString } from "../helpers/utils.js";
 
 export async function authLoginAction() {
   authLogger.setScope("Login");
 
+  let isAlreadyAuthorized = false;
+
   try {
-    // Check if we are already authenticated
+    isAlreadyAuthorized = await isAuthorized();
+  } catch (err) {
+    authLogger.error(
+      "Could not verify your authentication status.",
+      authLogger.nextLine,
+      getErrorMessage(err),
+    );
+    process.exit(1);
+  }
+
+  if (isAlreadyAuthorized) {
     const accessToken = getBearerToken();
     await connectIntegration("webflow", { accessToken });
     process.exit(0);
-  } catch (err) {
-    // Continue with authentication
   }
 
   try {
@@ -27,7 +38,7 @@ export async function authLoginAction() {
     });
 
     if (error || !data) {
-      authLogger.error("Error fetching device code:", error?.error_description);
+      authLogger.error("Error fetching device code:", getErrorMessage(error));
       process.exit(1);
     }
 

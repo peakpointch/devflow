@@ -3,16 +3,27 @@ import { authLogger } from "../helpers/taskLogger.js";
 import {
   assertAccessToken,
   connectIntegration,
+  isAuthorized,
   getBearerToken
 } from "../helpers/auth.js";
-import { errorToString } from "../helpers/utils.js";
+import { getErrorMessage, errorToString } from "../helpers/utils.js";
 async function authLoginAction() {
   authLogger.setScope("Login");
+  let isAlreadyAuthorized = false;
   try {
+    isAlreadyAuthorized = await isAuthorized();
+  } catch (err) {
+    authLogger.error(
+      "Could not verify your authentication status.",
+      authLogger.nextLine,
+      getErrorMessage(err)
+    );
+    process.exit(1);
+  }
+  if (isAlreadyAuthorized) {
     const accessToken = getBearerToken();
     await connectIntegration("webflow", { accessToken });
     process.exit(0);
-  } catch (err) {
   }
   try {
     const { data, error } = await authClient.device.code({
@@ -20,7 +31,7 @@ async function authLoginAction() {
       scope: "openid profile email webflow"
     });
     if (error || !data) {
-      authLogger.error("Error fetching device code:", error?.error_description);
+      authLogger.error("Error fetching device code:", getErrorMessage(error));
       process.exit(1);
     }
     const {
