@@ -66,7 +66,7 @@ export class TaskLogger extends CliLogger {
   ): void {
     this.rawLevel = CliLogger.translateLevel(opts.level);
     this.activeLogMethod = opts.method ?? this.rawLevel;
-    const decorator = opts.icon ? `  ${opts.icon}` : "";
+    const decorator = opts.icon ? ` ${opts.icon}` : "";
 
     const prefixes = [decorator, this.scope].filter(
       (prefix): prefix is string => Boolean(prefix),
@@ -94,7 +94,7 @@ export class TaskLogger extends CliLogger {
     this.taskLog(
       {
         level: "debug",
-        icon: this.colors.debug("•"),
+        icon: this.colors.debug("◇"),
       },
       ...msg,
     );
