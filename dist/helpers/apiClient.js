@@ -1,6 +1,17 @@
 import { logger } from "../helpers/taskLogger.js";
 import { assertAccessToken, getBearerHeaders } from "../helpers/auth.js";
-import { errorToString } from "./utils.js";
+import { getErrorCode, errorToString } from "./utils.js";
+class ApiError extends Error {
+  /**
+   * Lower case error code
+   */
+  code;
+  constructor(message, code) {
+    super(message);
+    this.name = "ApiError";
+    this.code = code?.toLowerCase() || "unknown";
+  }
+}
 class ApiClient {
   opts;
   constructor(options) {
@@ -17,20 +28,26 @@ class ApiClient {
       headers: this.headers
     };
   }
-  requireData(result, errorMessage, options) {
-    if (result.error || result.data === null || result.data === void 0) {
-      throw new Error(`${errorMessage} ${errorToString(result.error)}`);
+  requireData(result, errorPrefix, options) {
+    const { data, error } = result;
+    if (error || data === null || data === void 0) {
+      throw new ApiError(
+        [errorPrefix, errorToString(error)].join(" "),
+        getErrorCode(error)
+      );
     }
-    return options?.callback && result.data !== null ? options.callback(result.data) : result.data;
+    return options?.callback && data !== null ? options.callback(data) : data;
   }
-  optionalData(result, errorMessage, options) {
-    if (result.error || result.data === null || result.data === void 0) {
-      result.data = null;
-      logger.error(errorMessage, errorToString(result.error));
+  optionalData(result, errorPrefix, options) {
+    let { data, error } = result;
+    if (error || data === null || data === void 0) {
+      data = null;
+      logger.error(errorPrefix, errorToString(error));
     }
-    return options?.callback && result.data !== null ? options.callback(result.data) : result.data;
+    return options?.callback && data !== null ? options.callback(data) : data;
   }
 }
 export {
-  ApiClient
+  ApiClient,
+  ApiError
 };

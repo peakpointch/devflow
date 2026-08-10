@@ -1,6 +1,6 @@
 import { logger } from "../helpers/taskLogger.js";
 import { assertAccessToken, getBearerHeaders } from "../helpers/auth.js";
-import { errorToString } from "./utils.js";
+import { getErrorCode, errorToString } from "./utils.js";
 import type { ApiResponse, ApiClientOptions } from "../types/api.js";
 
 export interface ReturnDataOptions<TData, TResult> {
@@ -8,6 +8,19 @@ export interface ReturnDataOptions<TData, TResult> {
    * A callback to transform the returned data
    */
   callback?: (data: TData) => TResult;
+}
+
+export class ApiError extends Error {
+  /**
+   * Lower case error code
+   */
+  public readonly code?: string;
+
+  constructor(message: string, code?: string | null | undefined) {
+    super(message);
+    this.name = "ApiError";
+    this.code = code?.toLowerCase() || "unknown";
+  }
 }
 
 export abstract class ApiClient {
@@ -32,30 +45,35 @@ export abstract class ApiClient {
 
   protected requireData<TData, TResult = TData>(
     result: ApiResponse<TData>,
-    errorMessage: string,
+    errorPrefix: string,
     options?: ReturnDataOptions<TData, TResult>,
   ): TResult {
-    if (result.error || result.data === null || result.data === undefined) {
-      throw new Error(`${errorMessage} ${errorToString(result.error)}`);
+    const { data, error } = result;
+    if (error || data === null || data === undefined) {
+      throw new ApiError(
+        [errorPrefix, errorToString(error)].join(" "),
+        getErrorCode(error),
+      );
     }
 
-    return options?.callback && result.data !== null
-      ? options.callback(result.data)
-      : (result.data as TResult);
+    return options?.callback && data !== null
+      ? options.callback(data)
+      : (data as TResult);
   }
 
   protected optionalData<TData, TResult = TData>(
     result: ApiResponse<TData>,
-    errorMessage: string,
+    errorPrefix: string,
     options?: ReturnDataOptions<TData, TResult>,
   ): TResult | null {
-    if (result.error || result.data === null || result.data === undefined) {
-      result.data = null;
-      logger.error(errorMessage, errorToString(result.error));
+    let { data, error } = result;
+    if (error || data === null || data === undefined) {
+      data = null;
+      logger.error(errorPrefix, errorToString(error));
     }
 
-    return options?.callback && result.data !== null
-      ? options.callback(result.data)
-      : (result.data as TResult);
+    return options?.callback && data !== null
+      ? options.callback(data)
+      : (data as TResult);
   }
 }
