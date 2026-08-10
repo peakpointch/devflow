@@ -5,7 +5,8 @@ import { getDotenvPath } from "./dotenv.js";
 import { parseNodeEnv } from "./utils.js";
 
 export function initialize(): void {
-  dotenv.config({ path: getDotenvPath() });
+  const { parsed: dotenvOutput } = dotenv.config({ path: getDotenvPath(), quiet: true});
+  const injectedCount = Object.keys(dotenvOutput ?? {}).length
   const env = parseNodeEnv(process.env.NODE_ENV);
 
   if (env === "development") {
@@ -16,6 +17,8 @@ export function initialize(): void {
     logger.setLevel("info");
   }
 
+  logger.setScope("Dotenv");
+  logger.info(`Injected env ${logger.num(`(${injectedCount})`)} from ${logger.var(".env")}`)
   logger.setScope("Peakflow");
   logger.debug("Log level:", logger.getLevel());
 }
