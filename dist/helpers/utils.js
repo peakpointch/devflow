@@ -51,11 +51,15 @@ function errorToString(error) {
 function capitalize(str) {
   return str.replace(/\b\w/g, (character) => character.toUpperCase());
 }
+function pluralize(str, count) {
+  return count === 1 ? str : `${str}s`;
+}
 export {
   capitalize,
   errorToString,
   isNodeEnv,
   isPlainObject,
   nodeEnvironments,
-  parseNodeEnv
+  parseNodeEnv,
+  pluralize
 };

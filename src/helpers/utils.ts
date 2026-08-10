@@ -82,6 +82,16 @@ export function errorToString(error: unknown): string {
   }
 }
 
+/**
+ * Capitalize the first letter of all words.
+ */
 export function capitalize(str: string): string {
   return str.replace(/\b\w/g, (character) => character.toUpperCase());
+}
+
+/**
+ * Append an `s` character to `str` if `count` is exactly 1.
+ */
+export function pluralize(str: string, count: number): string {
+  return count === 1 ? str : `${str}s`;
 }
