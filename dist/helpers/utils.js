@@ -16,34 +16,34 @@ function parseNodeEnv(env) {
 function isPlainObject(val) {
   return typeof val === "object" && val !== null && Object.getPrototypeOf(val) === Object.prototype;
 }
-function getValues(obj, keys) {
-  let res = [];
+function firstValidKeyValue(obj, keys) {
   for (const key of keys) {
     if (key && key in obj) {
-      res.push(obj[key]);
+      const value = obj[key];
+      if (value) return value;
     }
   }
-  return res;
+  return void 0;
 }
-function firstValidKey(obj, keys) {
-  for (const key of keys) {
-    if (key && key in obj) {
-      return key;
-    }
-  }
-  return null;
+function getErrorCode(error) {
+  const code = firstValidKeyValue(error ?? {}, ["code", "error"]);
+  return `${code}`.toLowerCase() || void 0;
+}
+function getErrorMessage(error) {
+  const message = firstValidKeyValue(error ?? {}, [
+    "message",
+    "error_description",
+    "statusText"
+  ]);
+  return `${message}` || void 0;
 }
 function errorToString(error) {
   if (error === null || error === void 0 || typeof error === "string" && !error) {
     return "Unknown error";
   } else if (typeof error === "object") {
-    const key = firstValidKey(error, ["code", "error"]);
-    const value = firstValidKey(error, [
-      "message",
-      "error_description",
-      "statusText"
-    ]);
-    return getValues(error, [key, value]).join(": ");
+    const code = getErrorCode(error);
+    const message = getErrorMessage(error);
+    return [code, message].filter(Boolean).join(": ");
   } else {
     return `${error}`;
   }
@@ -57,6 +57,8 @@ function pluralize(str, count) {
 export {
   capitalize,
   errorToString,
+  getErrorCode,
+  getErrorMessage,
   isNodeEnv,
   isPlainObject,
   nodeEnvironments,

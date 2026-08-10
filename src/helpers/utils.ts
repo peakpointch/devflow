@@ -37,26 +37,42 @@ export function isPlainObject(val: unknown): val is PlainObject {
   );
 }
 
-function getValues<T extends object>(
-  obj: T,
-  keys: Array<string | null | undefined>,
-): Array<T[keyof T]> {
-  let res = [];
+/**
+ * Return the first valid key's value
+ */
+function firstValidKeyValue<TObj extends object, TKey extends string>(
+  obj: TObj,
+  keys: TKey[],
+): TObj[keyof TObj] | undefined {
   for (const key of keys) {
     if (key && key in obj) {
-      res.push(obj[key as keyof T]);
+      const value = obj[key as unknown as keyof TObj];
+      if (value) return value;
     }
   }
-  return res;
+  return undefined;
 }
 
-function firstValidKey<T extends string>(obj: object, keys: T[]): T | null {
-  for (const key of keys) {
-    if (key && key in obj) {
-      return key;
-    }
-  }
-  return null;
+/**
+ * Get any valid error code (lower case), or undefined
+ * - checks properties: `code`, `error`
+ */
+export function getErrorCode(error: unknown): string | undefined {
+  const code = firstValidKeyValue(error ?? {}, ["code", "error"]);
+  return `${code}`.toLowerCase() || undefined;
+}
+
+/**
+ * Get any valid error message, or undefined
+ * - checks properties: `message`, `error_description`, `statusText`
+ */
+export function getErrorMessage(error: unknown): string | undefined {
+  const message = firstValidKeyValue(error ?? {}, [
+    "message",
+    "error_description",
+    "statusText",
+  ]);
+  return `${message}` || undefined;
 }
 
 /**
@@ -70,13 +86,10 @@ export function errorToString(error: unknown): string {
   ) {
     return "Unknown error";
   } else if (typeof error === "object") {
-    const key = firstValidKey(error, ["code", "error"]);
-    const value = firstValidKey(error, [
-      "message",
-      "error_description",
-      "statusText",
-    ]);
-    return getValues(error, [key, value]).join(": ");
+    const code = getErrorCode(error);
+    const message = getErrorMessage(error);
+
+    return [code, message].filter(Boolean).join(": ");
   } else {
     return `${error}`;
   }
