@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { AxiosHeaders } from "axios";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import events from "events";
@@ -10,85 +10,225 @@ import { replaceAssets } from "./helpers/assetReplacer.js";
 import { routes } from "./helpers/routes.js";
 import { PeakflowConfig } from "peakflow/config";
 import { devLogger as logger } from "./helpers/taskLogger.js";
+import { serverLogger } from "./helpers/httpLogger.js";
+import { errorToString, pluralize } from "./helpers/utils.js";
 
-function routeWfAuth(
-  app: ReturnType<typeof express>,
-  config: PeakflowConfig,
+/**
+ * Constructs the base URL of the Webflow site being proxied
+ */
+export function getWebflowBaseUrl(subdomain: string): string {
+  return `https://${subdomain}.webflow.io`;
+}
+
+/**
+ * Get the "Content-Type" headers
+ */
+function getContentType(headers: Partial<AxiosHeaders>): string {
+  return headers["content-type"]?.toString() || "";
+}
+
+/**
+ * Forwards specific response headers to the proxy response
+ */
+function forwardHeaders(
+  headers: Partial<AxiosHeaders>,
+  proxyRes: express.Response,
 ): void {
-  app.post("/.wf_auth", async (req, res) => {
+  const forward = ["content-type", "set-cookie"];
+
+  for (const key of forward) {
+    if (headers[key]) {
+      proxyRes.setHeader(key, headers[key]);
+    }
+  }
+}
+
+/**
+ * Get common request headers for the proxy
+ */
+function getRequestHeaders(baseUrl: string, proxyReq: express.Request) {
+  return {
+    Accept: proxyReq.headers.accept || "*/*",
+    "Accept-Language": proxyReq.headers["accept-language"] || "en-US,en;q=0.9",
+    "Cache-Control": "no-cache",
+    Cookie: proxyReq.headers.cookie || "",
+    Pragma: "no-cache",
+    Referer: `${baseUrl}${proxyReq.headers.referer?.replace(/^https?:\/\/[^/]+/, "") || "/"}`,
+    "User-Agent": proxyReq.headers["user-agent"] || "",
+  };
+}
+
+/**
+ * Forwards all GET requests to the Webflow site
+ */
+async function requestWebflowGET(
+  config: PeakflowConfig,
+  proxyReq: express.Request,
+) {
+  const baseUrl = getWebflowBaseUrl(config.server.webflowSubdomain);
+  return await axios.get(`${baseUrl}${proxyReq.url}`, {
+    headers: {
+      ...getRequestHeaders(baseUrl, proxyReq),
+
+      "Referrer-Policy": "strict-origin-when-cross-origin",
+      "Upgrade-Insecure-Requests": "1",
+    },
+    withCredentials: true,
+    validateStatus: () => true,
+    responseType: "arraybuffer",
+  });
+}
+
+/**
+ * Routes all GET requests
+ */
+function routeGetRequests(app: express.Express, config: PeakflowConfig): void {
+  app.get("*", async (proxyReq, proxyRes) => {
+    const performanceStart = performance.now();
+    let assetMessage = "";
     try {
-      const body = new URLSearchParams(req.body).toString();
-
-      const _res = await axios.post(
-        `https://${config.server.webflowSubdomain}.webflow.io/.wf_auth`,
-        body,
-        {
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-            "User-Agent": req.headers["user-agent"] || "",
-            Cookie: req.headers.cookie || "",
-            Origin: `https://${config.server.webflowSubdomain}.webflow.io`,
-            Referer: `https://${config.server.webflowSubdomain}.webflow.io${req.headers.referer?.replace(/^https?:\/\/[^/]+/, "") || "/"}`,
-            Accept:
-              "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-            "Accept-Language":
-              req.headers["accept-language"] || "en-US,en;q=0.9",
-            "Cache-Control": "no-cache",
-            Pragma: "no-cache",
-          },
-          maxRedirects: 0, // don't auto-follow
-          validateStatus: () => true, // let us handle 302/401/etc.
-          withCredentials: true,
-        },
-      );
-
-      // Forward cookies
-      if (_res.headers["set-cookie"]) {
-        res.setHeader("set-cookie", _res.headers["set-cookie"]);
+      // Skip devtools
+      if (proxyReq.url.includes("devtools")) {
+        proxyRes.sendStatus(204);
+        return;
       }
 
-      // Forward redirect if present
-      if (_res.status >= 300 && _res.status < 400 && _res.headers.location) {
-        return res.redirect(_res.status, _res.headers.location);
-      }
+      // Forward the request to the Webflow site
+      const webflowRes = await requestWebflowGET(config, proxyReq);
 
-      res.status(_res.status).send(_res.data);
+      // Forward headers and status code
+      forwardHeaders(webflowRes.headers, proxyRes);
+      proxyRes.status(webflowRes.status);
+
+      // Determine content type
+      const contentType = getContentType(webflowRes.headers);
+      const responseIsHtml = contentType.includes("text/html");
+
+      // Replace assets if applicable
+      if (responseIsHtml) {
+        const html = Buffer.from(webflowRes.data).toString("utf8");
+        const result = replaceAssets(html, config);
+
+        assetMessage = `Replaced ${logger.num(result.removedCount)} ${pluralize(
+          "asset",
+          result.removedCount,
+        )}`;
+
+        proxyRes.send(result.html);
+      } else {
+        proxyRes.send(Buffer.from(webflowRes.data));
+      }
     } catch (err: any) {
-      console.error("Error proxying /.wf_auth", err.message);
-      res
-        .status(err.response?.status || 500)
-        .send(err.response?.data || "Auth error");
+      proxyRes
+        .status(502)
+        .send(
+          `Failed to proxy ${proxyReq.method} ${proxyReq.path}: ${errorToString(err)}\n${err?.response?.data}`,
+        );
+    } finally {
+      const duration = performance.now() - performanceStart;
+
+      serverLogger.request({
+        method: proxyReq.method as "GET",
+        path: proxyReq.url,
+        status: proxyRes.statusCode,
+        duration,
+      });
+
+      if (assetMessage) {
+        logger.info(assetMessage);
+      }
     }
   });
 }
 
-// -----------------------------
-// Proxy server
-// -----------------------------
-export function startWebflowProxy(
+/**
+ * Forwards the auth request to the Webflow site
+ */
+async function requestWebflowAuthPOST(
   config: PeakflowConfig,
-  reloadEmitter: events.EventEmitter,
+  proxyReq: express.Request,
 ) {
-  const app = express();
+  const body = new URLSearchParams(proxyReq.body).toString();
+  const baseUrl = getWebflowBaseUrl(config.server.webflowSubdomain);
+
+  return await axios.post(`${baseUrl}${proxyReq.url}`, body, {
+    headers: {
+      ...getRequestHeaders(baseUrl, proxyReq),
+
+      Origin: baseUrl,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    maxRedirects: 0, // do not auto-follow
+    validateStatus: () => true,
+    withCredentials: true,
+  });
+}
+
+/**
+ * Routes Webflow's POST auth request for password protected pages
+ */
+function routeWebflowAuthRequests(
+  app: ReturnType<typeof express>,
+  config: PeakflowConfig,
+): void {
+  app.post(routes.wfAuth, async (proxyReq, proxyRes) => {
+    const performanceStart = performance.now();
+    try {
+      const webflowRes = await requestWebflowAuthPOST(config, proxyReq);
+
+      // Forward headers and status
+      forwardHeaders(webflowRes.headers, proxyRes);
+      proxyRes.status(webflowRes.status);
+
+      // Forward redirect if present
+      if (
+        webflowRes.status >= 300 &&
+        webflowRes.status < 400 &&
+        webflowRes.headers.location
+      ) {
+        return proxyRes.redirect(
+          webflowRes.status,
+          webflowRes.headers.location,
+        );
+      }
+
+      proxyRes.send(webflowRes.data);
+    } catch (err: any) {
+      proxyRes
+        .status(502)
+        .send(
+          `Failed to proxy ${proxyReq.method} ${proxyReq.path}: ${errorToString(err)}\n${err?.response?.data}`,
+        );
+    } finally {
+      const duration = performance.now() - performanceStart;
+
+      serverLogger.request({
+        method: proxyReq.method as "POST",
+        path: proxyReq.url,
+        status: proxyRes.statusCode,
+        duration,
+      });
+    }
+  });
+}
+
+/**
+ * Start the livereload WebSocket and hook into livereload events
+ */
+function setupLivereload(
+  app: express.Express,
+  reloadEmitter: events.EventEmitter,
+  config: PeakflowConfig,
+): void {
   const wsInstance = expressWs(app); // typed wrapper
-  app.use(
-    cors({
-      credentials: true,
-      origin: [/.*/],
-    }),
-  );
-  app.use(cookieParser());
-  app.use(routes.app, express.static(process.cwd()));
-  app.use(
-    routes.server,
-    express.static(path.resolve(import.meta.dirname, "..")),
-  );
-  app.use(express.urlencoded({ extended: true }));
-  app.use(express.json());
 
   if (config.server.livereload) {
     wsInstance.app.ws(routes.livereload, () => {
-      logger.info("Auto Reload connection established");
+      serverLogger.connection({
+        protocol: "WS",
+        path: routes.livereload,
+        state: "connected",
+      });
     });
   }
 
@@ -107,73 +247,39 @@ export function startWebflowProxy(
         (client) => config.server.livereload && client.send("reload-css"),
       );
   });
+}
 
-  routeWfAuth(app, config);
+/**
+ * Start the Webflow proxy server for local development
+ */
+export function startWebflowProxy(
+  config: PeakflowConfig,
+  reloadEmitter: events.EventEmitter,
+): void {
+  const app = express();
 
-  app.get("*", async (req, res) => {
-    const startPref = Date.now();
-    let isPage = false;
-    let scriptsRemovedLog = "";
-    try {
-      // Skip devtools
-      if (req.url.includes("devtools")) return;
+  app.use(
+    cors({
+      credentials: true,
+      origin: [/.*/],
+    }),
+  );
 
-      const _res = await axios.get(
-        `https://${config.server.webflowSubdomain}.webflow.io${req.url}`,
-        {
-          headers: {
-            Referer: `https://${config.server.webflowSubdomain}.webflow.io${req.path}`,
-            "Referrer-Policy": "strict-origin-when-cross-origin",
-            "User-Agent": req.headers["user-agent"] || "",
-            accept:
-              "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-            "accept-language": "en-US,en;q=0.9,it;q=0.8",
-            "cache-control": "no-cache",
-            pragma: "no-cache",
-            "upgrade-insecure-requests": "1",
-            Cookie: req.headers.cookie || "",
-          },
-          withCredentials: true,
-        },
-      );
+  app.use(cookieParser());
+  app.use(routes.app, express.static(process.cwd()));
+  app.use(
+    routes.server,
+    express.static(path.resolve(import.meta.dirname, "..")),
+  );
 
-      const type = _res.headers["content-type"] || _res.headers["Content-Type"];
-      let dataHtml = _res.data;
+  app.use(express.urlencoded({ extended: true }));
+  app.use(express.json());
 
-      if (type && typeof type === "string" && type.includes("text/html")) {
-        isPage = true;
-
-        const result = replaceAssets(dataHtml, config);
-
-        scriptsRemovedLog = `Replaced ${logger.num(result.removedCount)} ${result.removedCount === 1 ? "asset" : "assets"}`;
-        res.send(result.html);
-      } else {
-        res.send(_res.data);
-      }
-    } catch (err: any) {
-      // TODO: If the status code is 401, display webflow's password protected login page that was shipped with that code.
-      if (err.response && err.response.status === 401) {
-        res.status(401).send(err.response.data);
-      } else {
-        logger.error("Page not found", req.path);
-        res.send(
-          `[${logger.rawScope}] Page not found ${req.path} | status : ${err.message}`,
-        );
-      }
-    } finally {
-      const endPref = Date.now();
-      if (isPage) {
-        logger.info(
-          `Page ${logger.var(req.url)} took ${logger.num(endPref - startPref)}ms to fetch`,
-        );
-      }
-      if (scriptsRemovedLog) {
-        logger.info(scriptsRemovedLog);
-      }
-    }
-  });
+  setupLivereload(app, reloadEmitter, config);
+  routeGetRequests(app, config);
+  routeWebflowAuthRequests(app, config);
 
   app.listen(config.server.port, () => {
-    logger.info(`Local server http://localhost:${config.server.port}`);
+    logger.success(`Local server http://localhost:${config.server.port}`);
   });
 }

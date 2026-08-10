@@ -7,48 +7,159 @@ import path from "path";
 import { replaceAssets } from "./helpers/assetReplacer.js";
 import { routes } from "./helpers/routes.js";
 import { devLogger as logger } from "./helpers/taskLogger.js";
-function routeWfAuth(app, config) {
-  app.post("/.wf_auth", async (req, res) => {
-    try {
-      const body = new URLSearchParams(req.body).toString();
-      const _res = await axios.post(
-        `https://${config.server.webflowSubdomain}.webflow.io/.wf_auth`,
-        body,
-        {
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-            "User-Agent": req.headers["user-agent"] || "",
-            Cookie: req.headers.cookie || "",
-            Origin: `https://${config.server.webflowSubdomain}.webflow.io`,
-            Referer: `https://${config.server.webflowSubdomain}.webflow.io${req.headers.referer?.replace(/^https?:\/\/[^/]+/, "") || "/"}`,
-            Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-            "Accept-Language": req.headers["accept-language"] || "en-US,en;q=0.9",
-            "Cache-Control": "no-cache",
-            Pragma: "no-cache"
-          },
-          maxRedirects: 0,
-          // don't auto-follow
-          validateStatus: () => true,
-          // let us handle 302/401/etc.
-          withCredentials: true
-        }
-      );
-      if (_res.headers["set-cookie"]) {
-        res.setHeader("set-cookie", _res.headers["set-cookie"]);
-      }
-      if (_res.status >= 300 && _res.status < 400 && _res.headers.location) {
-        return res.redirect(_res.status, _res.headers.location);
-      }
-      res.status(_res.status).send(_res.data);
-    } catch (err) {
-      console.error("Error proxying /.wf_auth", err.message);
-      res.status(err.response?.status || 500).send(err.response?.data || "Auth error");
+import { serverLogger } from "./helpers/httpLogger.js";
+import { errorToString, pluralize } from "./helpers/utils.js";
+function getWebflowBaseUrl(subdomain) {
+  return `https://${subdomain}.webflow.io`;
+}
+function getContentType(headers) {
+  return headers["content-type"]?.toString() || "";
+}
+function forwardHeaders(headers, proxyRes) {
+  const forward = ["content-type", "set-cookie"];
+  for (const key of forward) {
+    if (headers[key]) {
+      proxyRes.setHeader(key, headers[key]);
     }
+  }
+}
+function getRequestHeaders(baseUrl, proxyReq) {
+  return {
+    Accept: proxyReq.headers.accept || "*/*",
+    "Accept-Language": proxyReq.headers["accept-language"] || "en-US,en;q=0.9",
+    "Cache-Control": "no-cache",
+    Cookie: proxyReq.headers.cookie || "",
+    Pragma: "no-cache",
+    Referer: `${baseUrl}${proxyReq.headers.referer?.replace(/^https?:\/\/[^/]+/, "") || "/"}`,
+    "User-Agent": proxyReq.headers["user-agent"] || ""
+  };
+}
+async function requestWebflowGET(config, proxyReq) {
+  const baseUrl = getWebflowBaseUrl(config.server.webflowSubdomain);
+  return await axios.get(`${baseUrl}${proxyReq.url}`, {
+    headers: {
+      ...getRequestHeaders(baseUrl, proxyReq),
+      "Referrer-Policy": "strict-origin-when-cross-origin",
+      "Upgrade-Insecure-Requests": "1"
+    },
+    withCredentials: true,
+    validateStatus: () => true,
+    responseType: "arraybuffer"
+  });
+}
+function routeGetRequests(app, config) {
+  app.get("*", async (proxyReq, proxyRes) => {
+    const performanceStart = performance.now();
+    let assetMessage = "";
+    try {
+      if (proxyReq.url.includes("devtools")) {
+        proxyRes.sendStatus(204);
+        return;
+      }
+      const webflowRes = await requestWebflowGET(config, proxyReq);
+      forwardHeaders(webflowRes.headers, proxyRes);
+      proxyRes.status(webflowRes.status);
+      const contentType = getContentType(webflowRes.headers);
+      const responseIsHtml = contentType.includes("text/html");
+      if (responseIsHtml) {
+        const html = Buffer.from(webflowRes.data).toString("utf8");
+        const result = replaceAssets(html, config);
+        assetMessage = `Replaced ${logger.num(result.removedCount)} ${pluralize(
+          "asset",
+          result.removedCount
+        )}`;
+        proxyRes.send(result.html);
+      } else {
+        proxyRes.send(Buffer.from(webflowRes.data));
+      }
+    } catch (err) {
+      proxyRes.status(502).send(
+        `Failed to proxy ${proxyReq.method} ${proxyReq.path}: ${errorToString(err)}
+${err?.response?.data}`
+      );
+    } finally {
+      const duration = performance.now() - performanceStart;
+      serverLogger.request({
+        method: proxyReq.method,
+        path: proxyReq.url,
+        status: proxyRes.statusCode,
+        duration
+      });
+      if (assetMessage) {
+        logger.info(assetMessage);
+      }
+    }
+  });
+}
+async function requestWebflowAuthPOST(config, proxyReq) {
+  const body = new URLSearchParams(proxyReq.body).toString();
+  const baseUrl = getWebflowBaseUrl(config.server.webflowSubdomain);
+  return await axios.post(`${baseUrl}${proxyReq.url}`, body, {
+    headers: {
+      ...getRequestHeaders(baseUrl, proxyReq),
+      Origin: baseUrl,
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    maxRedirects: 0,
+    // do not auto-follow
+    validateStatus: () => true,
+    withCredentials: true
+  });
+}
+function routeWebflowAuthRequests(app, config) {
+  app.post(routes.wfAuth, async (proxyReq, proxyRes) => {
+    const performanceStart = performance.now();
+    try {
+      const webflowRes = await requestWebflowAuthPOST(config, proxyReq);
+      forwardHeaders(webflowRes.headers, proxyRes);
+      proxyRes.status(webflowRes.status);
+      if (webflowRes.status >= 300 && webflowRes.status < 400 && webflowRes.headers.location) {
+        return proxyRes.redirect(
+          webflowRes.status,
+          webflowRes.headers.location
+        );
+      }
+      proxyRes.send(webflowRes.data);
+    } catch (err) {
+      proxyRes.status(502).send(
+        `Failed to proxy ${proxyReq.method} ${proxyReq.path}: ${errorToString(err)}
+${err?.response?.data}`
+      );
+    } finally {
+      const duration = performance.now() - performanceStart;
+      serverLogger.request({
+        method: proxyReq.method,
+        path: proxyReq.url,
+        status: proxyRes.statusCode,
+        duration
+      });
+    }
+  });
+}
+function setupLivereload(app, reloadEmitter, config) {
+  const wsInstance = expressWs(app);
+  if (config.server.livereload) {
+    wsInstance.app.ws(routes.livereload, () => {
+      serverLogger.connection({
+        protocol: "WS",
+        path: routes.livereload,
+        state: "connected"
+      });
+    });
+  }
+  reloadEmitter.on("script-change", () => {
+    wsInstance.getWss().clients.forEach(
+      (client) => config.server.livereload && client.send("reload")
+    );
+  });
+  reloadEmitter.on("styles-change", () => {
+    wsInstance.getWss().clients.forEach(
+      (client) => config.server.livereload && client.send("reload-css")
+    );
   });
 }
 function startWebflowProxy(config, reloadEmitter) {
   const app = express();
-  const wsInstance = expressWs(app);
   app.use(
     cors({
       credentials: true,
@@ -63,80 +174,14 @@ function startWebflowProxy(config, reloadEmitter) {
   );
   app.use(express.urlencoded({ extended: true }));
   app.use(express.json());
-  if (config.server.livereload) {
-    wsInstance.app.ws(routes.livereload, () => {
-      logger.info("Auto Reload connection established");
-    });
-  }
-  reloadEmitter.on("script-change", () => {
-    wsInstance.getWss().clients.forEach(
-      (client) => config.server.livereload && client.send("reload")
-    );
-  });
-  reloadEmitter.on("styles-change", () => {
-    wsInstance.getWss().clients.forEach(
-      (client) => config.server.livereload && client.send("reload-css")
-    );
-  });
-  routeWfAuth(app, config);
-  app.get("*", async (req, res) => {
-    const startPref = Date.now();
-    let isPage = false;
-    let scriptsRemovedLog = "";
-    try {
-      if (req.url.includes("devtools")) return;
-      const _res = await axios.get(
-        `https://${config.server.webflowSubdomain}.webflow.io${req.url}`,
-        {
-          headers: {
-            Referer: `https://${config.server.webflowSubdomain}.webflow.io${req.path}`,
-            "Referrer-Policy": "strict-origin-when-cross-origin",
-            "User-Agent": req.headers["user-agent"] || "",
-            accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-            "accept-language": "en-US,en;q=0.9,it;q=0.8",
-            "cache-control": "no-cache",
-            pragma: "no-cache",
-            "upgrade-insecure-requests": "1",
-            Cookie: req.headers.cookie || ""
-          },
-          withCredentials: true
-        }
-      );
-      const type = _res.headers["content-type"] || _res.headers["Content-Type"];
-      let dataHtml = _res.data;
-      if (type && typeof type === "string" && type.includes("text/html")) {
-        isPage = true;
-        const result = replaceAssets(dataHtml, config);
-        scriptsRemovedLog = `Replaced ${logger.num(result.removedCount)} ${result.removedCount === 1 ? "asset" : "assets"}`;
-        res.send(result.html);
-      } else {
-        res.send(_res.data);
-      }
-    } catch (err) {
-      if (err.response && err.response.status === 401) {
-        res.status(401).send(err.response.data);
-      } else {
-        logger.error("Page not found", req.path);
-        res.send(
-          `[${logger.rawScope}] Page not found ${req.path} | status : ${err.message}`
-        );
-      }
-    } finally {
-      const endPref = Date.now();
-      if (isPage) {
-        logger.info(
-          `Page ${logger.var(req.url)} took ${logger.num(endPref - startPref)}ms to fetch`
-        );
-      }
-      if (scriptsRemovedLog) {
-        logger.info(scriptsRemovedLog);
-      }
-    }
-  });
+  setupLivereload(app, reloadEmitter, config);
+  routeGetRequests(app, config);
+  routeWebflowAuthRequests(app, config);
   app.listen(config.server.port, () => {
-    logger.info(`Local server http://localhost:${config.server.port}`);
+    logger.success(`Local server http://localhost:${config.server.port}`);
   });
 }
 export {
+  getWebflowBaseUrl,
   startWebflowProxy
 };
