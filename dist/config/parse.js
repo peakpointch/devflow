@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import { configSchema } from "peakflow/config";
 import { createJiti } from "jiti";
-import logger from "../helpers/logger.js";
+import { configLogger as logger } from "../helpers/taskLogger.js";
 const configFileNames = {
   ts: "peakflow.config.ts",
   js: "peakflow.config.js",
@@ -52,7 +52,6 @@ async function parseConfig(configPath) {
   return result.data;
 }
 async function parseConfigAction() {
-  logger.setScope("Config");
   let config;
   try {
     const configPath = findConfigPath(process.cwd());

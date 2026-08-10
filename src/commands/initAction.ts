@@ -1,7 +1,7 @@
 import fs from "fs-extra";
 import path from "path";
 import { downloadTemplate } from "giget";
-import logger from "../helpers/logger.js";
+import { logger } from "../helpers/taskLogger.js";
 
 export async function initAction(projectName: string) {
   logger.setScope("Init");

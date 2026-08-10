@@ -1,5 +1,5 @@
 import { authClient } from "../cloud/authClient.js";
-import logger from "../helpers/logger.js";
+import { authLogger } from "../helpers/taskLogger.js";
 import {
   assertAccessToken,
   connectIntegration,
@@ -7,7 +7,7 @@ import {
 } from "../helpers/auth.js";
 import { errorToString } from "../helpers/utils.js";
 async function authLoginAction() {
-  logger.setScope("Login");
+  authLogger.setScope("Login");
   try {
     const accessToken = getBearerToken();
     await connectIntegration("webflow", { accessToken });
@@ -20,7 +20,7 @@ async function authLoginAction() {
       scope: "openid profile email webflow"
     });
     if (error || !data) {
-      logger.error("Error fetching device code:", error?.error_description);
+      authLogger.error("Error fetching device code:", error?.error_description);
       process.exit(1);
     }
     const {
@@ -30,19 +30,19 @@ async function authLoginAction() {
       verification_uri_complete,
       interval = 5
     } = data;
-    logger.info(
+    authLogger.info(
       "Device Authorization in Progress",
-      logger.nextLine,
+      authLogger.nextLine,
       `Please visit: ${verification_uri_complete}`,
-      logger.nextLine,
-      `Enter code: ${logger.var(user_code)}`
+      authLogger.nextLine,
+      `Enter code: ${authLogger.var(user_code)}`
     );
     const onSuccess = async (data2) => {
       await connectIntegration("webflow", { accessToken: data2.access_token });
     };
     await pollForToken(device_code, interval, onSuccess);
   } catch (err) {
-    logger.error(errorToString(err));
+    authLogger.error(errorToString(err));
     process.exit(1);
   }
 }
@@ -66,21 +66,21 @@ async function pollForToken(deviceCode, interval, onSuccess) {
               break;
             case "slow_down":
               pollingInterval += 5;
-              logger.warn(`Slowing down polling to ${logger.num(pollingInterval)}s`);
+              authLogger.warn(`Slowing down polling to ${authLogger.num(pollingInterval)}s`);
               break;
             case "access_denied":
-              logger.error("Access was denied by the user");
+              authLogger.error("Access was denied by the user");
               process.exit(1);
             case "expired_token":
-              logger.error("The device code has expired. Please try again.");
+              authLogger.error("The device code has expired. Please try again.");
               process.exit(1);
             default:
-              logger.error(error.error_description);
+              authLogger.error(error.error_description);
               process.exit(1);
           }
         }
       } catch (err) {
-        logger.error(errorToString(err));
+        authLogger.error(errorToString(err));
         process.exit(1);
       }
       setTimeout(poll, pollingInterval * 1e3);
@@ -89,12 +89,12 @@ async function pollForToken(deviceCode, interval, onSuccess) {
   });
 }
 async function authLogoutAction() {
-  logger.setScope("Logout");
-  logger.error("This command has not yet been implemented.");
+  authLogger.setScope("Logout");
+  authLogger.error("This command has not yet been implemented.");
 }
 async function authStatusAction() {
-  logger.setScope("Status");
-  logger.error("This command has not yet been implemented.");
+  authLogger.setScope("Status");
+  authLogger.error("This command has not yet been implemented.");
 }
 export {
   authLoginAction,

@@ -3,7 +3,7 @@ import path from "path";
 import { configSchema, type PeakflowConfig } from "peakflow/config";
 import { createJiti } from "jiti";
 
-import logger from "../helpers/logger.js";
+import { configLogger as logger } from "../helpers/taskLogger.js";
 
 export type ConfigFileType = "ts" | "js" | "mjs" | "json" | "glob";
 export type ConfigFiles = Record<ConfigFileType, string>;
@@ -73,8 +73,6 @@ export async function parseConfig(configPath: string): Promise<PeakflowConfig> {
 }
 
 export async function parseConfigAction(): Promise<PeakflowConfig> {
-  logger.setScope("Config");
-
   let config: PeakflowConfig;
 
   try {

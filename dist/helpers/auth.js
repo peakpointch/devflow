@@ -1,4 +1,4 @@
-import logger from "./logger.js";
+import { logger } from "./taskLogger.js";
 import { capitalize } from "./utils.js";
 import { PeakflowClient } from "../cloud/api.js";
 import {

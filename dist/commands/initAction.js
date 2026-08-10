@@ -1,7 +1,7 @@
 import fs from "fs-extra";
 import path from "path";
 import { downloadTemplate } from "giget";
-import logger from "../helpers/logger.js";
+import { logger } from "../helpers/taskLogger.js";
 async function initAction(projectName) {
   logger.setScope("Init");
   logger.info(`Initializing project: ${logger.var(projectName)}...`);

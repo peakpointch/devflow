@@ -1,4 +1,4 @@
-import logger from "../helpers/logger.js";
+import { TaskLogger } from "../helpers/taskLogger.js";
 import { type WistiaMediaResponse } from "../types/wistia.js";
 
 async function fetchWistiaMedia(id: string): Promise<WistiaMediaResponse> {
@@ -13,7 +13,7 @@ async function fetchWistiaMedia(id: string): Promise<WistiaMediaResponse> {
 }
 
 export async function wistiaAction(id: string): Promise<void> {
-  logger.setScope("Wistia");
+  const logger = new TaskLogger("Wistia")
   try {
     const data = await fetchWistiaMedia(id);
 

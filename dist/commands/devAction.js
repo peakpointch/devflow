@@ -1,13 +1,12 @@
 import chokidar from "chokidar";
 import events from "events";
-import logger from "../helpers/logger.js";
+import { devLogger as logger } from "../helpers/taskLogger.js";
 import { parseConfigAction } from "../config/parse.js";
 import { buildDev } from "../build.js";
 import { startWebflowProxy } from "../server.js";
 async function devAction() {
   const config = await parseConfigAction();
   const reloadEmitter = new events.EventEmitter();
-  logger.setScope("Dev");
   logger.info("Read the docs at https://github.com/peakpointch/peakflow-cli");
   await buildDev(config);
   startWebflowProxy(config, reloadEmitter);

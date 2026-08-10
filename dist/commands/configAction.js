@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import logger from "../helpers/logger.js";
+import { logger } from "../helpers/taskLogger.js";
 import {
   defaultConfigFileType,
   defaultConfigFileName,
@@ -9,7 +9,7 @@ import {
   resolveConfigPath
 } from "../config/parse.js";
 function configAction() {
-  logger.scope = "Config";
+  logger.setScope("Config");
   const existingPath = findConfigPath(process.cwd());
   if (existingPath) {
     logger.warn(

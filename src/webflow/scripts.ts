@@ -1,7 +1,7 @@
 import { PeakflowModule, PeakflowRepo } from "peakflow/config";
 import { Webflow } from "webflow-api";
 
-import logger from "../helpers/logger.js";
+import { logger } from "../helpers/taskLogger.js";
 import {
   assertFileName,
   generateCdnUrl,

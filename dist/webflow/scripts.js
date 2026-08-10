@@ -1,4 +1,4 @@
-import logger from "../helpers/logger.js";
+import { logger } from "../helpers/taskLogger.js";
 import {
   assertFileName,
   generateCdnUrl,

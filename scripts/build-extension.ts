@@ -5,7 +5,7 @@ import postCSSPlugin from "esbuild-postcss";
 import vuePlugin from "esbuild-plugin-vue3";
 import { parseArgs } from "node:util";
 
-import logger from "../src/helpers/logger.js";
+import { buildLogger as logger } from "../src/helpers/taskLogger.js";
 import { cleanDirExcept } from "./clean-dir.js";
 import { parseNodeEnv } from "../src/helpers/utils.js";
 import type { NodeEnv } from "../src/types/utils.js";
@@ -42,6 +42,11 @@ async function buildExtension(environment: NodeEnv = "production") {
     "src/extension/main.css",
   ];
 
+  logger.setLevel(1)
+  logger.info(
+    `Extension: Building ${environment} bundle...`,
+  );
+
   await esbuild.build({
     bundle: true,
     entryPoints,
@@ -59,8 +64,7 @@ async function buildExtension(environment: NodeEnv = "production") {
     },
   });
 
-  logger.setScope("Build");
-  logger.info(
+  logger.success(
     `Extension: Compiled ${logger.num(entryPoints.length)} files to ${logger.var(outdir)} for ${logger.var(environment)}.`,
   );
 }

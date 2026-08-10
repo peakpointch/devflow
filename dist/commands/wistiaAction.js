@@ -1,4 +1,4 @@
-import logger from "../helpers/logger.js";
+import { TaskLogger } from "../helpers/taskLogger.js";
 async function fetchWistiaMedia(id) {
   const response = await fetch(
     `https://fast.wistia.com/embed/medias/${id}.json`
@@ -10,7 +10,7 @@ async function fetchWistiaMedia(id) {
   return data;
 }
 async function wistiaAction(id) {
-  logger.setScope("Wistia");
+  const logger = new TaskLogger("Wistia");
   try {
     const data = await fetchWistiaMedia(id);
     for (const asset of data.media.assets) {

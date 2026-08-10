@@ -1,7 +1,7 @@
 import { WebflowClient } from "webflow-api";
 import { getEnvModules, getUniqueModules } from "../config/modules.js";
 import { generateRegisterScripts, generateUpsertScripts } from "./scripts.js";
-import logger from "../helpers/logger.js";
+import { logger } from "../helpers/taskLogger.js";
 import { getIntegrationToken } from "../helpers/auth.js";
 import { matchPages } from "../helpers/pageMatcher.js";
 import { errorToString } from "../helpers/utils.js";

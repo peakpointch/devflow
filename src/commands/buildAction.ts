@@ -1,11 +1,10 @@
 import { buildProd } from "../build.js";
 import { parseConfigAction } from "../config/parse.js";
-import logger from "../helpers/logger.js";
+import { buildLogger as logger } from "../helpers/taskLogger.js";
 
 export async function buildAction() {
   const config = await parseConfigAction();
 
-  logger.setScope("Build");
   logger.info("Building production bundle...");
 
   try {

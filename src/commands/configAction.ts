@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import logger from "../helpers/logger.js";
+import { logger } from "../helpers/taskLogger.js";
 import {
   defaultConfigFileType,
   defaultConfigFileName,
@@ -10,7 +10,7 @@ import {
 } from "../config/parse.js";
 
 export function configAction(): void {
-  logger.scope = "Config";
+  logger.setScope("Config");
 
   const existingPath = findConfigPath(process.cwd());
   if (existingPath) {

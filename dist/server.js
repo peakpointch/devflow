@@ -6,7 +6,7 @@ import expressWs from "express-ws";
 import path from "path";
 import { replaceAssets } from "./helpers/assetReplacer.js";
 import { routes } from "./helpers/routes.js";
-import logger from "./helpers/logger.js";
+import { devLogger as logger } from "./helpers/taskLogger.js";
 function routeWfAuth(app, config) {
   app.post("/.wf_auth", async (req, res) => {
     try {
@@ -118,7 +118,7 @@ function startWebflowProxy(config, reloadEmitter) {
       } else {
         logger.error("Page not found", req.path);
         res.send(
-          `[${logger.scope}] Page not found ${req.path} | status : ${err.message}`
+          `[${logger.rawScope}] Page not found ${req.path} | status : ${err.message}`
         );
       }
     } finally {

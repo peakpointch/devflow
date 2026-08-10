@@ -9,7 +9,7 @@ import {
   registerMissingScripts,
   publishEnvironment
 } from "../webflow/api.js";
-import logger from "../helpers/logger.js";
+import { logger } from "../helpers/taskLogger.js";
 import { errorToString } from "../helpers/utils.js";
 async function codePublishAction(options = {}) {
   logger.setScope("Publish");

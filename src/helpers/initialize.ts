@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 
-import logger from "./logger.js";
+import { logger } from "./taskLogger.js";
 import { getDotenvPath } from "./dotenv.js";
 import { parseNodeEnv } from "./utils.js";
 

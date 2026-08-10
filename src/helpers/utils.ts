@@ -1,4 +1,4 @@
-import logger from "./logger.js";
+import { logger } from "./taskLogger.js";
 import type { NodeEnv, PlainObject } from "../types/utils.js";
 
 export const nodeEnvironments: NodeEnv[] = [

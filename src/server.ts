@@ -9,7 +9,7 @@ import path from "path";
 import { replaceAssets } from "./helpers/assetReplacer.js";
 import { routes } from "./helpers/routes.js";
 import { PeakflowConfig } from "peakflow/config";
-import logger from "./helpers/logger.js";
+import { devLogger as logger } from "./helpers/taskLogger.js";
 
 function routeWfAuth(
   app: ReturnType<typeof express>,
@@ -157,7 +157,7 @@ export function startWebflowProxy(
       } else {
         logger.error("Page not found", req.path);
         res.send(
-          `[${logger.scope}] Page not found ${req.path} | status : ${err.message}`,
+          `[${logger.rawScope}] Page not found ${req.path} | status : ${err.message}`,
         );
       }
     } finally {
