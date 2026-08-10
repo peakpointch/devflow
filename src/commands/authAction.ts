@@ -136,5 +136,33 @@ export async function authLogoutAction() {
 
 export async function authStatusAction() {
   authLogger.setScope("Status");
-  authLogger.error("This command has not yet been implemented.");
+
+  authLogger.info("Checking authentication status...");
+
+  try {
+    getBearerToken();
+  } catch {
+    authLogger.warn("You are not authenticated.");
+    process.exit(0);
+  }
+
+  try {
+    if (!(await isAuthorized())) {
+      authLogger.warn(
+        "Your stored credentials have expired or are no longer valid.",
+        authLogger.nextLine,
+        `Run ${authLogger.var("peakflow auth login")} to authenticate again.`,
+      );
+      process.exit(0);
+    }
+
+    authLogger.success("You are currently authenticated via Peakflow Cloud.");
+  } catch (err) {
+    authLogger.error(
+      "Could not verify your authentication status.",
+      authLogger.nextLine,
+      getErrorMessage(err),
+    );
+    process.exit(1);
+  }
 }
