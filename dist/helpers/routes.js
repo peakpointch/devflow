@@ -10,7 +10,11 @@ const routes = {
   /**
    * Hosts server files
    */
-  server: "/__server"
+  server: "/__server",
+  /**
+   * Webflow auth endpoint
+   */
+  wfAuth: "/.wf_auth"
 };
 export {
   routes
