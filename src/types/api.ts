@@ -13,5 +13,5 @@ export type ApiResponse<T> = {
 };
 
 export interface ApiClientOptions {
-  accessToken: AccessToken;
+  accessToken?: AccessToken;
 }

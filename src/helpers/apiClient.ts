@@ -26,9 +26,12 @@ export class ApiError extends Error {
 export abstract class ApiClient {
   protected opts: ApiClientOptions;
 
-  constructor(options: ApiClientOptions) {
-    assertAccessToken(options.accessToken);
-    this.opts = options;
+  constructor(options?: Partial<ApiClientOptions>) {
+    this.opts = options ?? {};
+    if (options?.accessToken) {
+      assertAccessToken(options.accessToken);
+      this.opts.accessToken = options.accessToken;
+    }
   }
 
   protected get headers() {

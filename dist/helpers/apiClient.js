@@ -15,8 +15,11 @@ class ApiError extends Error {
 class ApiClient {
   opts;
   constructor(options) {
-    assertAccessToken(options.accessToken);
-    this.opts = options;
+    this.opts = options ?? {};
+    if (options?.accessToken) {
+      assertAccessToken(options.accessToken);
+      this.opts.accessToken = options.accessToken;
+    }
   }
   get headers() {
     return {
