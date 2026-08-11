@@ -87,11 +87,13 @@ export class CliLogger {
     return this.prefixes.join(" ");
   }
 
-  protected replaceIndent(msg: any[]): any[] {
+  protected replaceIndent(msg: any[], customIndent?: string): any[] {
     const indent = " ".repeat(stringWidth(this.prefix));
 
     return msg.map((part) =>
-      typeof part === "string" ? part.replace(this.indent, indent) : part,
+      typeof part === "string"
+        ? part.replace(this.indent, customIndent ?? indent)
+        : part,
     );
   }
 
@@ -115,6 +117,7 @@ export class CliLogger {
     opts: {
       level: LogLevelNumber | LogLevelName;
       prefixes?: string[];
+      indent?: string;
     },
     ...msg: any[]
   ): void {
@@ -126,7 +129,10 @@ export class CliLogger {
 
     this.prefixes = opts.prefixes ?? [];
 
-    this.logger[this.rawLevel](this.prefix, ...this.replaceIndent(msg));
+    this.logger[this.rawLevel](
+      this.prefix,
+      ...this.replaceIndent(msg, opts.indent),
+    );
   }
 
   public trace(...msg: any[]): void {

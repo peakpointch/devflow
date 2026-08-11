@@ -68,10 +68,10 @@ class CliLogger {
     }
     return this.prefixes.join(" ");
   }
-  replaceIndent(msg) {
+  replaceIndent(msg, customIndent) {
     const indent = " ".repeat(stringWidth(this.prefix));
     return msg.map(
-      (part) => typeof part === "string" ? part.replace(this.indent, indent) : part
+      (part) => typeof part === "string" ? part.replace(this.indent, customIndent ?? indent) : part
     );
   }
   get newLine() {
@@ -92,7 +92,10 @@ class CliLogger {
       return;
     }
     this.prefixes = opts.prefixes ?? [];
-    this.logger[this.rawLevel](this.prefix, ...this.replaceIndent(msg));
+    this.logger[this.rawLevel](
+      this.prefix,
+      ...this.replaceIndent(msg, opts.indent)
+    );
   }
   trace(...msg) {
     this.log({ level: "trace" }, ...msg);
