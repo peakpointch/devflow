@@ -72,7 +72,7 @@ export async function authLoginAction() {
 async function pollForToken(
   deviceCode: string,
   interval: number,
-  onSuccess: (data: TokenResponse) => void,
+  onSuccess: (data: TokenResponse) => Promise<void> | void,
 ) {
   let pollingInterval = interval;
 
@@ -85,8 +85,8 @@ async function pollForToken(
           client_id: "peakflow-cli",
         });
         if (data?.access_token) {
-          assertAccessToken(data?.access_token);
-          onSuccess(data as TokenResponse);
+          assertAccessToken(data.access_token);
+          await onSuccess(data as TokenResponse);
           return resolve();
         } else if (error) {
           switch (error.error) {

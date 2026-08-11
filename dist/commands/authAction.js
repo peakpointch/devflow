@@ -66,8 +66,8 @@ async function pollForToken(deviceCode, interval, onSuccess) {
           client_id: "peakflow-cli"
         });
         if (data?.access_token) {
-          assertAccessToken(data?.access_token);
-          onSuccess(data);
+          assertAccessToken(data.access_token);
+          await onSuccess(data);
           return resolve();
         } else if (error) {
           switch (error.error) {
