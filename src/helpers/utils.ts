@@ -59,7 +59,7 @@ function firstValidKeyValue<TObj extends object, TKey extends string>(
  */
 export function getErrorCode(error: unknown): string | undefined {
   const code = firstValidKeyValue(error ?? {}, ["code", "error"]);
-  return `${code}`.toLowerCase() || undefined;
+  return code ? `${code}`.toLowerCase() : undefined;
 }
 
 /**
@@ -72,7 +72,7 @@ export function getErrorMessage(error: unknown): string | undefined {
     "error_description",
     "statusText",
   ]);
-  return `${message}` || undefined;
+  return message ? `${message}` : undefined;
 }
 
 /**

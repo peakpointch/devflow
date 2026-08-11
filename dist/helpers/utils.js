@@ -27,7 +27,7 @@ function firstValidKeyValue(obj, keys) {
 }
 function getErrorCode(error) {
   const code = firstValidKeyValue(error ?? {}, ["code", "error"]);
-  return `${code}`.toLowerCase() || void 0;
+  return code ? `${code}`.toLowerCase() : void 0;
 }
 function getErrorMessage(error) {
   const message = firstValidKeyValue(error ?? {}, [
@@ -35,7 +35,7 @@ function getErrorMessage(error) {
     "error_description",
     "statusText"
   ]);
-  return `${message}` || void 0;
+  return message ? `${message}` : void 0;
 }
 function errorToString(error) {
   if (error === null || error === void 0 || typeof error === "string" && !error) {
