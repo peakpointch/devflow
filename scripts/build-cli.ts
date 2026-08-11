@@ -2,14 +2,10 @@ import * as esbuild from "esbuild";
 import fs from "node:fs";
 import { parseArgs } from "node:util";
 
-import {
-  TaskLogger,
-  buildLogger as logger,
-} from "../src/helpers/taskLogger.js";
+import { buildLogger as logger } from "../src/helpers/taskLogger.js";
 import { cleanDirExcept } from "./clean-dir.js";
 import { parseNodeEnv } from "../src/helpers/utils.js";
 import type { NodeEnv } from "../src/types/utils.js";
-import chalk from "chalk";
 
 const args = parseArgs({
   options: {
