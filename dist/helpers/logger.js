@@ -97,6 +97,14 @@ class CliLogger {
       ...this.replaceIndent(msg, opts.indent)
     );
   }
+  continue(...msg) {
+    if (this.rawLevel === "silent") {
+      return;
+    }
+    this.logger[this.rawLevel](
+      ...this.replaceIndent(msg)
+    );
+  }
   trace(...msg) {
     this.log({ level: "trace" }, ...msg);
   }

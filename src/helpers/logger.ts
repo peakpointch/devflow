@@ -135,6 +135,18 @@ export class CliLogger {
     );
   }
 
+  public continue(
+    ...msg: any[]
+  ): void {
+    if (this.rawLevel === "silent") {
+      return;
+    }
+
+    this.logger[this.rawLevel](
+      ...this.replaceIndent(msg),
+    );
+  }
+
   public trace(...msg: any[]): void {
     this.log({ level: "trace" }, ...msg);
   }
