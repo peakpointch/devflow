@@ -8,7 +8,7 @@ export async function buildAction() {
   logger.info("Building production bundle...");
 
   try {
-    buildProd(config);
+    await buildProd(config);
 
     logger.success(
       `Complete! Compiled ${logger.num(config.build.modules.length)} files to ${logger.var(config.build.outdir)}`,
