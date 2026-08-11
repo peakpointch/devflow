@@ -1,5 +1,5 @@
 import { logger } from "./taskLogger.js";
-import { capitalize, isPlainObject } from "./utils.js";
+import { capitalize } from "./utils.js";
 import { PeakflowClient } from "../cloud/api.js";
 import { ApiError } from "./apiClient.js";
 import {
@@ -124,6 +124,32 @@ export function greetAccount(
   );
 }
 
+/**
+ * Clears the locally stored dotenv credentials
+ */
+export function clearCredentials(...variables: string[]): void {
+  const credentials: DotenvVariableMap = {};
+
+  for (const key of variables) {
+    credentials[key] = "";
+  }
+
+  const { success, errors } = editDotenvFile(getDotenvPath(), credentials, {
+    update: true,
+  });
+
+  if (!success) {
+    throw new Error(errors.join("\n"));
+  }
+
+  for (const key of Object.keys(credentials)) {
+    delete process.env[key];
+  }
+}
+
+/**
+ * Store credentials locally as dotenv variables
+ */
 function storeCredentials(credentials: DotenvVariableMap): void {
   logger.info("Updating environment variables...");
 

@@ -69,6 +69,21 @@ function greetAccount(account, accountInfo) {
     logger.newLine
   );
 }
+function clearCredentials(...variables) {
+  const credentials = {};
+  for (const key of variables) {
+    credentials[key] = "";
+  }
+  const { success, errors } = editDotenvFile(getDotenvPath(), credentials, {
+    update: true
+  });
+  if (!success) {
+    throw new Error(errors.join("\n"));
+  }
+  for (const key of Object.keys(credentials)) {
+    delete process.env[key];
+  }
+}
 function storeCredentials(credentials) {
   logger.info("Updating environment variables...");
   const dotenvPath = getDotenvPath();
@@ -123,6 +138,7 @@ async function connectIntegration(providerId, options) {
 export {
   PEAKFLOW_ACCESS_TOKEN,
   assertAccessToken,
+  clearCredentials,
   connectIntegration,
   getBearerHeaders,
   getBearerToken,
