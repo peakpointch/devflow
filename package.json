@@ -21,7 +21,7 @@
     "test:watch": "node --disable-warning=ExperimentalWarning --experimental-vm-modules ./node_modules/jest/bin/jest.js --watch"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.2.2",
+    "@tailwindcss/postcss": "^4.3.3",
     "@types/chrome": "^0.1.38",
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.13",
@@ -35,7 +35,7 @@
     "jest": "^30.4.2",
     "postcss": "^8.5.8",
     "prettier": "^3.8.1",
-    "tailwindcss": "^4.2.2",
+    "tailwindcss": "^4.3.3",
     "ts-jest": "^29.4.11",
     "tsx": "^4.23.11",
     "type-fest": "^5.8.0",
