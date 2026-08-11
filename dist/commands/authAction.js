@@ -7,6 +7,7 @@ import {
   getBearerToken
 } from "../helpers/auth.js";
 import { getErrorMessage, errorToString } from "../helpers/utils.js";
+import { PeakflowClient } from "../cloud/api.js";
 async function authLoginAction() {
   authLogger.setScope("Login");
   let isAlreadyAuthorized = false;
@@ -26,14 +27,8 @@ async function authLoginAction() {
     process.exit(0);
   }
   try {
-    const { data, error } = await authClient.device.code({
-      client_id: "peakflow-cli",
-      scope: "openid profile email webflow"
-    });
-    if (error || !data) {
-      authLogger.error("Error fetching device code:", getErrorMessage(error));
-      process.exit(1);
-    }
+    const client = new PeakflowClient();
+    const data = await client.auth.deviceCode();
     const {
       device_code,
       user_code,

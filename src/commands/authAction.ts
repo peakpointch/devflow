@@ -8,6 +8,7 @@ import {
 } from "../helpers/auth.js";
 import { getErrorMessage, errorToString } from "../helpers/utils.js";
 import type { TokenResponse } from "../types/auth.js";
+import { PeakflowClient } from "../cloud/api.js";
 
 export async function authLoginAction() {
   authLogger.setScope("Login");
@@ -32,15 +33,8 @@ export async function authLoginAction() {
   }
 
   try {
-    const { data, error } = await authClient.device.code({
-      client_id: "peakflow-cli",
-      scope: "openid profile email webflow",
-    });
-
-    if (error || !data) {
-      authLogger.error("Error fetching device code:", getErrorMessage(error));
-      process.exit(1);
-    }
+    const client = new PeakflowClient();
+    const data = await client.auth.deviceCode();
 
     const {
       device_code,
