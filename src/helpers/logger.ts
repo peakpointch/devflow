@@ -172,6 +172,9 @@ export class CliLogger {
   }
 
   public json(obj: object): string {
-    return JSON.stringify(obj, undefined, 4);
+    const isShort = Array.isArray(obj) && obj.length <= 1;
+    const shouldCollapse =
+      isShort && typeof obj[0] === "string" && obj[0].length < 30;
+    return JSON.stringify(obj, undefined, shouldCollapse ? undefined : 4);
   }
 }

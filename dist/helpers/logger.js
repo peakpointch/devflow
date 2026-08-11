@@ -125,7 +125,9 @@ class CliLogger {
     return this.colors.num(num);
   }
   json(obj) {
-    return JSON.stringify(obj, void 0, 4);
+    const isShort = Array.isArray(obj) && obj.length <= 1;
+    const shouldCollapse = isShort && typeof obj[0] === "string" && obj[0].length < 30;
+    return JSON.stringify(obj, void 0, shouldCollapse ? void 0 : 4);
   }
 }
 export {
