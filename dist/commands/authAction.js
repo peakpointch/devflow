@@ -2,9 +2,12 @@ import { authClient } from "../cloud/authClient.js";
 import { authLogger } from "../helpers/taskLogger.js";
 import {
   assertAccessToken,
+  clearCredentials,
   connectIntegration,
+  getBearerToken,
+  getTokenVarName,
   isAuthorized,
-  getBearerToken
+  PEAKFLOW_ACCESS_TOKEN
 } from "../helpers/auth.js";
 import { getErrorMessage, errorToString } from "../helpers/utils.js";
 import { PeakflowClient } from "../cloud/api.js";
@@ -100,7 +103,27 @@ async function pollForToken(deviceCode, interval, onSuccess) {
 }
 async function authLogoutAction() {
   authLogger.setScope("Logout");
-  authLogger.error("This command has not yet been implemented.");
+  try {
+    let accessToken;
+    try {
+      accessToken = getBearerToken();
+    } catch {
+      clearCredentials(PEAKFLOW_ACCESS_TOKEN, getTokenVarName("webflow"));
+      authLogger.success("Successfully logged out.");
+      process.exit(0);
+    }
+    const client = new PeakflowClient({ accessToken });
+    await client.auth.signOut(accessToken);
+    clearCredentials(PEAKFLOW_ACCESS_TOKEN, getTokenVarName("webflow"));
+    authLogger.success("Successfully logged out.");
+  } catch (err) {
+    authLogger.error(
+      "Failed to log out.",
+      authLogger.nextLine,
+      getErrorMessage(err)
+    );
+    process.exit(1);
+  }
 }
 async function authStatusAction() {
   authLogger.setScope("Status");

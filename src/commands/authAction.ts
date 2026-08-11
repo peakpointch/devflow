@@ -2,12 +2,15 @@ import { authClient } from "../cloud/authClient.js";
 import { authLogger } from "../helpers/taskLogger.js";
 import {
   assertAccessToken,
+  clearCredentials,
   connectIntegration,
-  isAuthorized,
   getBearerToken,
+  getTokenVarName,
+  isAuthorized,
+  PEAKFLOW_ACCESS_TOKEN,
 } from "../helpers/auth.js";
 import { getErrorMessage, errorToString } from "../helpers/utils.js";
-import type { TokenResponse } from "../types/auth.js";
+import type { AccessToken, TokenResponse } from "../types/auth.js";
 import { PeakflowClient } from "../cloud/api.js";
 
 export async function authLoginAction() {
@@ -125,7 +128,33 @@ async function pollForToken(
 
 export async function authLogoutAction() {
   authLogger.setScope("Logout");
-  authLogger.error("This command has not yet been implemented.");
+
+  try {
+    let accessToken: AccessToken | undefined;
+
+    try {
+      accessToken = getBearerToken();
+    } catch {
+      clearCredentials(PEAKFLOW_ACCESS_TOKEN, getTokenVarName("webflow"));
+      authLogger.success("Successfully logged out.");
+      process.exit(0);
+    }
+
+    const client = new PeakflowClient({ accessToken });
+
+    await client.auth.signOut(accessToken);
+
+    clearCredentials(PEAKFLOW_ACCESS_TOKEN, getTokenVarName("webflow"));
+
+    authLogger.success("Successfully logged out.");
+  } catch (err) {
+    authLogger.error(
+      "Failed to log out.",
+      authLogger.nextLine,
+      getErrorMessage(err),
+    );
+    process.exit(1);
+  }
 }
 
 export async function authStatusAction() {
