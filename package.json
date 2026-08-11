@@ -37,7 +37,7 @@
     "prettier": "^3.8.1",
     "tailwindcss": "^4.2.2",
     "ts-jest": "^29.4.11",
-    "tsx": "^4.21.0",
+    "tsx": "^4.23.11",
     "type-fest": "^5.8.0",
     "typescript": "^6.0.3",
     "vue-tsc": "^3.2.8"
