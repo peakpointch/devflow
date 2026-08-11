@@ -1,9 +1,10 @@
 import { authClient } from "./authClient.js";
 import { ApiClient } from "../helpers/apiClient.js";
-import { assertAccessToken } from "../helpers/auth.js";
+import { assertAccessToken, getBearerHeaders } from "../helpers/auth.js";
 import { capitalize } from "../helpers/utils.js";
 import type { ApiClientOptions } from "../types/api.js";
 import type {
+  AccessToken,
   AccessTokenContext,
   AccountInfo,
   UserAccount,
@@ -50,11 +51,37 @@ export class AccountsClient extends ApiClient {
   }
 }
 
+export class AuthClient extends ApiClient {
+  public async deviceCode() {
+    const result = await authClient.device.code({
+      client_id: "peakflow-cli",
+      scope: "openid profile email webflow",
+    });
+
+    return this.requireData(result, "Error fetching device code:");
+  }
+
+  public async signOut(accessToken?: AccessToken) {
+    const result = await authClient.signOut({
+      fetchOptions: {
+        headers: {
+          ...this.headers,
+          ...getBearerHeaders(accessToken),
+        },
+      },
+    });
+
+    return this.requireData(result, "Failed to sign out");
+  }
+}
+
 export class PeakflowClient extends ApiClient {
   public accounts: AccountsClient;
+  public auth: AuthClient;
 
-  constructor(options: ApiClientOptions) {
+  constructor(options?: Partial<ApiClientOptions>) {
     super(options);
     this.accounts = new AccountsClient(options);
+    this.auth = new AuthClient(options);
   }
 }

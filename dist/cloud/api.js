@@ -1,6 +1,6 @@
 import { authClient } from "./authClient.js";
 import { ApiClient } from "../helpers/apiClient.js";
-import { assertAccessToken } from "../helpers/auth.js";
+import { assertAccessToken, getBearerHeaders } from "../helpers/auth.js";
 import { capitalize } from "../helpers/utils.js";
 class AccountsClient extends ApiClient {
   async list() {
@@ -34,14 +34,37 @@ class AccountsClient extends ApiClient {
     return this.optionalData(result, "Failed to fetch account info");
   }
 }
+class AuthClient extends ApiClient {
+  async deviceCode() {
+    const result = await authClient.device.code({
+      client_id: "peakflow-cli",
+      scope: "openid profile email webflow"
+    });
+    return this.requireData(result, "Error fetching device code:");
+  }
+  async signOut(accessToken) {
+    const result = await authClient.signOut({
+      fetchOptions: {
+        headers: {
+          ...this.headers,
+          ...getBearerHeaders(accessToken)
+        }
+      }
+    });
+    return this.requireData(result, "Failed to sign out");
+  }
+}
 class PeakflowClient extends ApiClient {
   accounts;
+  auth;
   constructor(options) {
     super(options);
     this.accounts = new AccountsClient(options);
+    this.auth = new AuthClient(options);
   }
 }
 export {
   AccountsClient,
+  AuthClient,
   PeakflowClient
 };
