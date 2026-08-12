@@ -11,6 +11,7 @@ import {
 } from "../webflow/api.js";
 import { logger } from "../helpers/taskLogger.js";
 import { errorToString } from "../helpers/utils.js";
+import { Table } from "../helpers/table.js";
 async function codePublishAction(options = {}) {
   logger.setScope("Publish");
   if (options.dryRun) {
@@ -86,27 +87,65 @@ async function codeListAction({ json, verbose }) {
     logger.logger.info(logger.json(blocks));
     return;
   }
-  for (const block of blocks) {
-    const target = block.type === "site" ? chalk.bold("Site") : `${chalk.bold("Page")} ${chalk.dim(block.pageId ?? "unknown")}`;
-    logger.logger.info(target);
-    if (!block.scripts?.length) {
-      logger.logger.info(chalk.dim("  No scripts") + logger.newLine);
-      continue;
+  const pages = await fetchPages(client, wfConfig.siteId);
+  const pagesById = pages.reduce((acc, page) => {
+    acc[page.id] = page;
+    return acc;
+  }, {});
+  const rows = blocks.flatMap((block) => {
+    const path = block.type === "site" ? "[Global]" : pagesById[block.pageId ?? ""]?.publishedPath ?? "unknown";
+    return (block.scripts ?? []).map((script) => ({
+      path,
+      script,
+      file: script.attributes?.["data-peakflow-local"] ?? ""
+    }));
+  }).sort(
+    (a, b) => a.script.id.localeCompare(b.script.id) || a.script.version.localeCompare(b.script.version) || a.path.localeCompare(b.path)
+  );
+  const table = new Table(rows, [
+    {
+      id: "page",
+      title: "Page",
+      getValue: (row) => row.path,
+      format: (cell) => chalk.dim(cell),
+      formatTitle: (cell) => chalk.bold(cell)
+    },
+    {
+      id: "script",
+      title: "Script",
+      getValue: (row) => row.script.id,
+      format: (cell) => logger.var(cell),
+      formatTitle: (cell) => chalk.bold(cell)
+    },
+    {
+      id: "version",
+      title: "Version",
+      getValue: (row) => row.script.version,
+      format: (cell) => chalk.dim(cell),
+      formatTitle: (cell) => chalk.bold(cell)
+    },
+    {
+      id: "location",
+      title: "Location",
+      getValue: (row) => row.script.location,
+      format: (cell) => chalk.dim(cell),
+      formatTitle: (cell) => chalk.bold(cell)
+    },
+    {
+      id: "file",
+      title: "File",
+      getValue: (row) => row.file,
+      format: (cell) => chalk.dim(cell),
+      formatTitle: (cell) => chalk.bold(cell)
     }
-    for (const script of block.scripts) {
-      logger.logger.info(
-        // @ts-expect-error wrong webflow typing
-        `  ${logger.var(script.displayName ?? script.id)}`,
-        chalk.dim(script.version),
-        chalk.dim(script.location)
-      );
-      if (!verbose) continue;
-      for (const [name, value] of Object.entries(script.attributes ?? {})) {
-        logger.logger.info(`    ${chalk.dim(`${name}:`)} ${value}`);
-      }
-    }
-    logger.logger.info();
-  }
+  ]);
+  logger.logger.info(
+    table.toString({
+      titleRow: true,
+      rowCount: true,
+      prefix: "  "
+    })
+  );
 }
 export {
   codeListAction,

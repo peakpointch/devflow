@@ -13,6 +13,8 @@ import {
 import { logger } from "../helpers/taskLogger.js";
 import { errorToString } from "../helpers/utils.js";
 import { OptionDryRun, OptionJSON, OptionVerbose } from "../types/cli.js";
+import { Table } from "../helpers/table.js";
+import { Webflow } from "webflow-api";
 
 export type CodePublishOptions = OptionDryRun & OptionJSON & OptionVerbose;
 
@@ -121,34 +123,76 @@ export async function codeListAction({ json, verbose }: CodeListOptions) {
     return;
   }
 
-  for (const block of blocks) {
-    const target =
-      block.type === "site"
-        ? chalk.bold("Site")
-        : `${chalk.bold("Page")} ${chalk.dim(block.pageId ?? "unknown")}`;
+  const pages = await fetchPages(client, wfConfig.siteId);
 
-    logger.logger.info(target);
+  const pagesById = pages.reduce<Record<string, Webflow.Page>>((acc, page) => {
+    acc[page.id] = page;
+    return acc;
+  }, {});
 
-    if (!block.scripts?.length) {
-      logger.logger.info(chalk.dim("  No scripts") + logger.newLine);
-      continue;
-    }
+  const rows = blocks
+    .flatMap((block) => {
+      const path =
+        block.type === "site"
+          ? "[Global]"
+          : (pagesById[block.pageId ?? ""]?.publishedPath ?? "unknown");
 
-    for (const script of block.scripts) {
-      logger.logger.info(
-        // @ts-expect-error wrong webflow typing
-        `  ${logger.var(script.displayName ?? script.id)}`,
-        chalk.dim(script.version),
-        chalk.dim(script.location),
-      );
+      return (block.scripts ?? []).map((script) => ({
+        path,
+        script,
+        file: (script.attributes?.["data-peakflow-local"] as string) ?? "",
+      }));
+    })
+    .sort(
+      (a, b) =>
+        a.script.id.localeCompare(b.script.id) ||
+        a.script.version.localeCompare(b.script.version) ||
+        a.path.localeCompare(b.path),
+    );
 
-      if (!verbose) continue;
+  const table = new Table(rows, [
+    {
+      id: "page",
+      title: "Page",
+      getValue: (row) => row.path,
+      format: (cell) => chalk.dim(cell),
+      formatTitle: (cell) => chalk.bold(cell),
+    },
+    {
+      id: "script",
+      title: "Script",
+      getValue: (row) => row.script.id,
+      format: (cell) => logger.var(cell),
+      formatTitle: (cell) => chalk.bold(cell),
+    },
+    {
+      id: "version",
+      title: "Version",
+      getValue: (row) => row.script.version,
+      format: (cell) => chalk.dim(cell),
+      formatTitle: (cell) => chalk.bold(cell),
+    },
+    {
+      id: "location",
+      title: "Location",
+      getValue: (row) => row.script.location,
+      format: (cell) => chalk.dim(cell),
+      formatTitle: (cell) => chalk.bold(cell),
+    },
+    {
+      id: "file",
+      title: "File",
+      getValue: (row) => row.file,
+      format: (cell) => chalk.dim(cell),
+      formatTitle: (cell) => chalk.bold(cell),
+    },
+  ]);
 
-      for (const [name, value] of Object.entries(script.attributes ?? {})) {
-        logger.logger.info(`    ${chalk.dim(`${name}:`)} ${value}`);
-      }
-    }
-
-    logger.logger.info();
-  }
+  logger.logger.info(
+    table.toString({
+      titleRow: true,
+      rowCount: true,
+      prefix: "  ",
+    }),
+  );
 }
