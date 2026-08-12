@@ -1,20 +1,17 @@
 import { logger } from "../helpers/taskLogger.js";
 import {
-  assertFileName,
   generateCdnUrl,
   getDisplayName,
+  getFilePath,
   getModuleHash
 } from "../config/modules.js";
-import { generateIntegrityHash } from "../helpers/hash.js";
 function generateRegisterScripts(modules, repo) {
   return modules.map((mod) => {
-    assertFileName(mod.file);
-    const cdnUrl = generateCdnUrl(repo, mod.version, mod.file);
     return {
       canCopy: true,
-      displayName: getDisplayName(mod.file),
-      hostedLocation: cdnUrl,
-      integrityHash: generateIntegrityHash(cdnUrl),
+      displayName: getDisplayName(getFilePath(mod.path)),
+      hostedLocation: generateCdnUrl(repo, mod),
+      integrityHash: getModuleHash(repo, mod),
       version: mod.version
     };
   });
@@ -26,19 +23,19 @@ function generateUpsertScripts({
   dryRun = false
 }) {
   return modules.map((mod) => {
-    const scriptHash = getModuleHash(mod, repo);
+    const scriptHash = getModuleHash(repo, mod);
     const script = scriptsByHash.get(scriptHash);
     if (!dryRun && !script?.id) {
       logger.debug("Found script is invalid:", logger.newLine, script);
       throw new Error("Cannot upsert unregistered script");
     }
     return {
-      id: script?.id ?? `${mod.file} [unregistered]`,
-      location: mod.file.endsWith(".css") ? "header" : "footer",
+      id: script?.id ?? `${getFilePath(mod.path)} [unregistered]`,
+      location: mod.path.endsWith(".css") ? "header" : "footer",
       version: mod.version,
       attributes: {
         "data-peakflow-hmr": "true",
-        "data-peakflow-local": mod.file
+        "data-peakflow-local": getFilePath(mod.path)
       }
     };
   });

@@ -3,36 +3,71 @@ import { PeakflowEnv, PeakflowModule, PeakflowRepo } from "peakflow/config";
 import { generateIntegrityHash } from "../helpers/hash.js";
 import { capitalize } from "../helpers/utils.js";
 import type { Brand } from "../types/utils.js";
+import { anchorRegExp, joinRegExp } from "../helpers/regexp.js";
 
 /**
- * File name of a module
+ * File path of a module
  */
-export type ModuleFileName = Brand<string, "ModuleFileName">;
+export type ModuleFilePath = Brand<string, "ModuleFilePath">;
 
 /**
- * A RegExp representing a valid file name of a script module
+ * Parts of the module path regex pattern
  */
-export const fileNamePattern =
-  /^(?<name>[a-zA-Z0-9]+)\.(?<extension>[a-zA-Z]+)$/;
+export const pathParts = {
+  prefix: /(?:\.[/\\])?/,
+  path: /(?<path>(?:[^/\\]+[/\\])*)/,
+  filename: /(?<filename>[a-zA-Z0-9_-]+)/,
+  extension: /\.(?<extension>[a-zA-Z]+)/,
+};
+
+/**
+ * A RegExp representing a valid module path of a script module
+ */
+const pathr = anchorRegExp(
+  joinRegExp([
+    pathParts.prefix,
+    pathParts.path,
+    pathParts.filename,
+    pathParts.extension,
+  ]),
+);
 
 /**
  * Validate the modules filename via the file name RegExp
  */
-export function assertFileName(
-  fileName: string,
-): asserts fileName is ModuleFileName {
-  if (!fileName || !fileNamePattern.test(fileName)) {
-    throw new TypeError(`Invalid FileName: "${fileName}"`);
+export function assertFilePath(
+  filePath: string,
+): asserts filePath is ModuleFilePath {
+  if (!filePath || !pathr.test(filePath)) {
+    throw new TypeError(`Invalid FileName: "${filePath}"`);
   }
 }
 
 /**
- * Convert the filename to a script display name.
+ * Get the file name from a path
  */
-export function getDisplayName(fileName: ModuleFileName): string {
-  const match = fileName.match(fileNamePattern)!;
-  const { name = "undefined", extension = "unknown" } = match.groups!;
-  return `${capitalize(name)} ${extension?.toUpperCase()}`;
+export function getFilePath(path: string): ModuleFilePath {
+  const filePath = path.replace(anchorRegExp(pathParts.prefix, "start"), "");
+  assertFilePath(filePath);
+  return filePath;
+}
+
+/**
+ * Get the file name from a path
+ */
+export function getFileName(filePath: ModuleFilePath): string {
+  const match = filePath.match(pathr)!;
+  const { filename = "undefined", extension = "unknown" } = match.groups!;
+  return `${filename}.${extension}`;
+}
+
+/**
+ * Convert the file path to a script display name.
+ */
+export function getDisplayName(filePath: ModuleFilePath): string {
+  const match = filePath.match(pathr)!;
+  const { filename = "undefined", extension = "unknown" } = match.groups!;
+  return `${capitalize(filename)} ${extension?.toUpperCase()}`;
 }
 
 /**
@@ -40,53 +75,19 @@ export function getDisplayName(fileName: ModuleFileName): string {
  */
 export function generateCdnUrl(
   repo: PeakflowRepo,
-  version: string,
-  file: string,
+  mod: PeakflowModule,
 ): string {
-  return `https://cdn.jsdelivr.net/gh/${repo.owner}/${repo.name}@${version}/dist/${file}`;
+  return `https://cdn.jsdelivr.net/gh/${repo.owner}/${repo.name}@${mod.version}/${getFilePath(mod.path)}`;
 }
 
 /**
  * Get the integrity hash for a module (based on the CDN URL).
  */
 export function getModuleHash(
-  module: PeakflowModule,
   repo: PeakflowRepo,
+  module: PeakflowModule,
 ): string {
-  return generateIntegrityHash(
-    generateCdnUrl(repo, module.version, module.file),
-  );
-}
-
-/**
- * Normalize a module entry to { file, version }
- */
-export function normalizeModule(
-  module: PeakflowModule | string,
-  fallbackVersion: string,
-): PeakflowModule {
-  let mod: PeakflowModule;
-  if (typeof module === "string") {
-    mod = { file: module, version: fallbackVersion };
-  } else {
-    mod = { file: module.file, version: module.version ?? fallbackVersion };
-  }
-
-  assertFileName(mod.file);
-
-  if (!mod.version) {
-    throw new Error(`Invalid module version: "${mod.version}"`);
-  }
-
-  return mod;
-}
-
-/**
- * Map an environments modules and normalize them.
- * @returns An array of normalized `PeakflowModule`'s
- */
-export function getEnvModules(env: PeakflowEnv): PeakflowModule[] {
-  return env.modules.map((mod) => normalizeModule(mod, env.version));
+  return generateIntegrityHash(generateCdnUrl(repo, module));
 }
 
 /**
@@ -97,9 +98,9 @@ export function getUniqueModules(
 ): PeakflowModule[] {
   return Array.from(
     environments
-      .flatMap(getEnvModules)
+      .flatMap((env) => env.modules)
       .reduce((acc, mod) => {
-        const key = `${mod.file}@${mod.version}`;
+        const key = `${mod.path}@${mod.version}`;
         if (!acc.has(key)) {
           acc.set(key, mod);
         }

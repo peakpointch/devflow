@@ -1,44 +1,50 @@
 import { generateIntegrityHash } from "../helpers/hash.js";
 import { capitalize } from "../helpers/utils.js";
-const fileNamePattern = /^(?<name>[a-zA-Z0-9]+)\.(?<extension>[a-zA-Z]+)$/;
-function assertFileName(fileName) {
-  if (!fileName || !fileNamePattern.test(fileName)) {
-    throw new TypeError(`Invalid FileName: "${fileName}"`);
+import { anchorRegExp, joinRegExp } from "../helpers/regexp.js";
+const pathParts = {
+  prefix: /(?:\.[/\\])?/,
+  path: /(?<path>(?:[^/\\]+[/\\])*)/,
+  filename: /(?<filename>[a-zA-Z0-9_-]+)/,
+  extension: /\.(?<extension>[a-zA-Z]+)/
+};
+const pathr = anchorRegExp(
+  joinRegExp([
+    pathParts.prefix,
+    pathParts.path,
+    pathParts.filename,
+    pathParts.extension
+  ])
+);
+function assertFilePath(filePath) {
+  if (!filePath || !pathr.test(filePath)) {
+    throw new TypeError(`Invalid FileName: "${filePath}"`);
   }
 }
-function getDisplayName(fileName) {
-  const match = fileName.match(fileNamePattern);
-  const { name = "undefined", extension = "unknown" } = match.groups;
-  return `${capitalize(name)} ${extension?.toUpperCase()}`;
+function getFilePath(path) {
+  const filePath = path.replace(anchorRegExp(pathParts.prefix, "start"), "");
+  assertFilePath(filePath);
+  return filePath;
 }
-function generateCdnUrl(repo, version, file) {
-  return `https://cdn.jsdelivr.net/gh/${repo.owner}/${repo.name}@${version}/dist/${file}`;
+function getFileName(filePath) {
+  const match = filePath.match(pathr);
+  const { filename = "undefined", extension = "unknown" } = match.groups;
+  return `${filename}.${extension}`;
 }
-function getModuleHash(module, repo) {
-  return generateIntegrityHash(
-    generateCdnUrl(repo, module.version, module.file)
-  );
+function getDisplayName(filePath) {
+  const match = filePath.match(pathr);
+  const { filename = "undefined", extension = "unknown" } = match.groups;
+  return `${capitalize(filename)} ${extension?.toUpperCase()}`;
 }
-function normalizeModule(module, fallbackVersion) {
-  let mod;
-  if (typeof module === "string") {
-    mod = { file: module, version: fallbackVersion };
-  } else {
-    mod = { file: module.file, version: module.version ?? fallbackVersion };
-  }
-  assertFileName(mod.file);
-  if (!mod.version) {
-    throw new Error(`Invalid module version: "${mod.version}"`);
-  }
-  return mod;
+function generateCdnUrl(repo, mod) {
+  return `https://cdn.jsdelivr.net/gh/${repo.owner}/${repo.name}@${mod.version}/${getFilePath(mod.path)}`;
 }
-function getEnvModules(env) {
-  return env.modules.map((mod) => normalizeModule(mod, env.version));
+function getModuleHash(repo, module) {
+  return generateIntegrityHash(generateCdnUrl(repo, module));
 }
 function getUniqueModules(environments) {
   return Array.from(
-    environments.flatMap(getEnvModules).reduce((acc, mod) => {
-      const key = `${mod.file}@${mod.version}`;
+    environments.flatMap((env) => env.modules).reduce((acc, mod) => {
+      const key = `${mod.path}@${mod.version}`;
       if (!acc.has(key)) {
         acc.set(key, mod);
       }
@@ -47,12 +53,12 @@ function getUniqueModules(environments) {
   );
 }
 export {
-  assertFileName,
-  fileNamePattern,
+  assertFilePath,
   generateCdnUrl,
   getDisplayName,
-  getEnvModules,
+  getFileName,
+  getFilePath,
   getModuleHash,
   getUniqueModules,
-  normalizeModule
+  pathParts
 };

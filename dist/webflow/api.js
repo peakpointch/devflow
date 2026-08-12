@@ -1,6 +1,6 @@
 import chalk from "chalk";
 import { WebflowClient } from "webflow-api";
-import { getEnvModules, getUniqueModules } from "../config/modules.js";
+import { getUniqueModules } from "../config/modules.js";
 import { generateRegisterScripts, generateUpsertScripts } from "./scripts.js";
 import { logger } from "../helpers/taskLogger.js";
 import { getIntegrationToken } from "../helpers/auth.js";
@@ -100,6 +100,12 @@ async function registerMissingScripts({
           getValue: (row) => row.version,
           format: (cell) => chalk.dim(cell),
           formatTitle: (cell) => chalk.bold(cell)
+        },
+        {
+          id: "URL",
+          getValue: (row) => row.hostedLocation,
+          format: (cell) => cell,
+          formatTitle: (cell) => chalk.bold(cell)
         }
       ]);
       logger.continue(
@@ -139,14 +145,23 @@ async function publishEnvironment({
   verbose = false,
   json = false
 }) {
+  if (env.skip) {
+    logger.info(`Skipping disabled environment: ${logger.var(env.name)}`);
+    return;
+  }
   const matchedPages = matchPages(pages, env.pages);
-  const envModules = getEnvModules(env);
   const upsertScriptsRequest = generateUpsertScripts({
-    modules: envModules,
+    modules: env.modules,
     scriptsByHash: scripts,
     repo: config.repository,
     dryRun
   });
+  if (!upsertScriptsRequest.length) {
+    logger.info(
+      `Skipping ${logger.var(env.name)} environment due to ${logger.num(upsertScriptsRequest.length)} scripts.`
+    );
+    return;
+  }
   if (!matchedPages.length) {
     logger.info(
       `Skipping ${logger.var(env.name)} environment due to ${logger.num(matchedPages.length)} matched pages.`

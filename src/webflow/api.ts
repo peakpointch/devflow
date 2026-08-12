@@ -3,12 +3,12 @@ import chalk from "chalk";
 import { PeakflowConfig, PeakflowEnv } from "peakflow/config";
 import { Webflow, WebflowClient } from "webflow-api";
 
-import { getEnvModules, getUniqueModules } from "../config/modules.js";
+import { getUniqueModules } from "../config/modules.js";
 import { generateRegisterScripts, generateUpsertScripts } from "./scripts.js";
 import { logger } from "../helpers/taskLogger.js";
 import { getIntegrationToken } from "../helpers/auth.js";
 import { matchPages } from "../helpers/pageMatcher.js";
-import { errorToString, getMaxWidth, rightPad } from "../helpers/utils.js";
+import { errorToString } from "../helpers/utils.js";
 import type { WebflowConfig } from "../types/webflow.js";
 import { OptionDryRun, OptionJSON, OptionVerbose } from "../types/cli.js";
 import { Table } from "../helpers/table.js";
@@ -159,6 +159,12 @@ export async function registerMissingScripts({
           format: (cell) => chalk.dim(cell),
           formatTitle: (cell) => chalk.bold(cell),
         },
+        {
+          id: "URL",
+          getValue: (row) => row.hostedLocation,
+          format: (cell) => cell,
+          formatTitle: (cell) => chalk.bold(cell),
+        },
       ]);
 
       logger.continue(
@@ -229,14 +235,25 @@ export async function publishEnvironment({
   verbose = false,
   json = false,
 }: PublishEnvironmentParams) {
+  if (env.skip) {
+    logger.info(`Skipping disabled environment: ${logger.var(env.name)}`);
+    return;
+  }
+
   const matchedPages = matchPages(pages, env.pages);
-  const envModules = getEnvModules(env);
   const upsertScriptsRequest = generateUpsertScripts({
-    modules: envModules,
+    modules: env.modules,
     scriptsByHash: scripts,
     repo: config.repository,
     dryRun: dryRun,
   });
+
+  if (!upsertScriptsRequest.length) {
+    logger.info(
+      `Skipping ${logger.var(env.name)} environment due to ${logger.num(upsertScriptsRequest.length)} scripts.`,
+    );
+    return;
+  }
 
   if (!matchedPages.length) {
     logger.info(

@@ -3,12 +3,11 @@ import { Webflow } from "webflow-api";
 
 import { logger } from "../helpers/taskLogger.js";
 import {
-  assertFileName,
   generateCdnUrl,
   getDisplayName,
+  getFilePath,
   getModuleHash,
 } from "../config/modules.js";
-import { generateIntegrityHash } from "../helpers/hash.js";
 import { OptionDryRun } from "../types/cli.js";
 
 /**
@@ -19,13 +18,11 @@ export function generateRegisterScripts(
   repo: PeakflowRepo,
 ): Webflow.CustomCodeHostedRequest[] {
   return modules.map((mod) => {
-    assertFileName(mod.file);
-    const cdnUrl = generateCdnUrl(repo, mod.version, mod.file);
     return {
       canCopy: true,
-      displayName: getDisplayName(mod.file) as string,
-      hostedLocation: cdnUrl,
-      integrityHash: generateIntegrityHash(cdnUrl),
+      displayName: getDisplayName(getFilePath(mod.path)) as string,
+      hostedLocation: generateCdnUrl(repo, mod),
+      integrityHash: getModuleHash(repo, mod),
       version: mod.version,
     };
   });
@@ -47,7 +44,7 @@ export function generateUpsertScripts({
   dryRun = false,
 }: GenerateUpsertScriptsOptions): Webflow.ScriptApply[] {
   return modules.map((mod) => {
-    const scriptHash = getModuleHash(mod, repo);
+    const scriptHash = getModuleHash(repo, mod);
     const script = scriptsByHash.get(scriptHash);
 
     if (!dryRun && !script?.id) {
@@ -56,12 +53,12 @@ export function generateUpsertScripts({
     }
 
     return {
-      id: script?.id ?? `${mod.file} [unregistered]`,
-      location: mod.file.endsWith(".css") ? "header" : "footer",
+      id: script?.id ?? `${getFilePath(mod.path)} [unregistered]`,
+      location: mod.path.endsWith(".css") ? "header" : "footer",
       version: mod.version,
       attributes: {
         "data-peakflow-hmr": "true",
-        "data-peakflow-local": mod.file,
+        "data-peakflow-local": getFilePath(mod.path),
       },
     };
   });
