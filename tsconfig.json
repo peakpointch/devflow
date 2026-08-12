@@ -7,8 +7,8 @@
 
     // Environment Settings
     "module": "NodeNext",
-    "target": "ES2022",
-    "lib": ["dom"],
+    "target": "esnext",
+    "lib": ["esnext", "dom"],
     "types": ["node", "chrome"],
 
     // Stricter Typechecking Options
