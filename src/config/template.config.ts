@@ -20,11 +20,13 @@ export default defineConfig({
   },
   environments: [
     /**
-     * Add your own environments here. Accepted properties:
-     * - name    : The name of the environment, e.g. "website"
-     * - modules : The scripts that should be added to this environment, relative to your `outdir`. E.g. "app.js" will result in "dist/app.js"
-     * - version : A fallback version for all modules. You can also set module specific versions in the `modules` property.
-     * - pages   : An array of glob patterns. Define which pages of your Webflow site this environment should include.
+     * Add your own publishing environments here.
+     *
+     * - name    : The name of the environment.
+     * - modules : The built modules (files) included in the environment. Use `peakflow build` to build your modules.
+     * - version : The version associated with the environment, used as a fallback for all modules.
+     * - pages   : Page patterns (literal path, Glob, ExtGlob). Define which pages of your Webflow site this environment applies to.
+     * - skip    : Optional: Skip this environment when publishing it.
      */
   ],
 });
