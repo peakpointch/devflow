@@ -22,6 +22,7 @@ export function stringifyAssets(assets: ExtractedAsset[]): string {
   return assets
     .map((asset) => {
       const attrString = Object.entries(asset.attrs)
+        .filter(([k]) => k !== "integrity")
         .map(([k, v]) => (v === true ? k : `${k}="${v}"`))
         .join(" ");
 

@@ -15,7 +15,7 @@ function updateAssetUrls(assets) {
 }
 function stringifyAssets(assets) {
   return assets.map((asset) => {
-    const attrString = Object.entries(asset.attrs).map(([k, v]) => v === true ? k : `${k}="${v}"`).join(" ");
+    const attrString = Object.entries(asset.attrs).filter(([k]) => k !== "integrity").map(([k, v]) => v === true ? k : `${k}="${v}"`).join(" ");
     return asset.type === "script" ? `<script ${attrString}></script>` : `<link ${attrString}>`;
   }).join("\n");
 }
