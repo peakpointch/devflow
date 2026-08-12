@@ -33,13 +33,24 @@ function getFileName(filePath) {
 function getDisplayName(filePath) {
   const match = filePath.match(pathr);
   const { filename = "undefined", extension = "unknown" } = match.groups;
-  return `${capitalize(filename)} ${extension?.toUpperCase()}`;
+  return `PFTESTV1 ${capitalize(filename)} ${extension?.toUpperCase()}`;
 }
 function generateCdnUrl(repo, mod) {
   return `https://cdn.jsdelivr.net/gh/${repo.owner}/${repo.name}@${mod.version}/${getFilePath(mod.path)}`;
 }
-function getModuleHash(repo, module) {
-  return generateIntegrityHash(generateCdnUrl(repo, module));
+const moduleCache = /* @__PURE__ */ new Map();
+async function getModuleHash(repo, module) {
+  const cdnUrl = generateCdnUrl(repo, module);
+  const cached = moduleCache.get(cdnUrl);
+  if (cached) return cached;
+  const res = await fetch(cdnUrl);
+  if (!res.ok) {
+    throw new Error(`Failed to fetch ${cdnUrl}: ${res.status} ${res.statusText}`);
+  }
+  const content = Buffer.from(await res.arrayBuffer());
+  const hash = generateIntegrityHash(content);
+  moduleCache.set(cdnUrl, hash);
+  return hash;
 }
 function getUniqueModules(environments) {
   return Array.from(

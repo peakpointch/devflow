@@ -67,7 +67,7 @@ export function getFileName(filePath: ModuleFilePath): string {
 export function getDisplayName(filePath: ModuleFilePath): string {
   const match = filePath.match(pathr)!;
   const { filename = "undefined", extension = "unknown" } = match.groups!;
-  return `${capitalize(filename)} ${extension?.toUpperCase()}`;
+  return `PFTESTV1 ${capitalize(filename)} ${extension?.toUpperCase()}`;
 }
 
 /**
@@ -80,14 +80,32 @@ export function generateCdnUrl(
   return `https://cdn.jsdelivr.net/gh/${repo.owner}/${repo.name}@${mod.version}/${getFilePath(mod.path)}`;
 }
 
+const moduleCache = new Map<string, string>();
+
 /**
  * Get the integrity hash for a module (based on the CDN URL).
  */
-export function getModuleHash(
+export async function getModuleHash(
   repo: PeakflowRepo,
   module: PeakflowModule,
-): string {
-  return generateIntegrityHash(generateCdnUrl(repo, module));
+): Promise<string> {
+  const cdnUrl = generateCdnUrl(repo, module);
+
+  const cached = moduleCache.get(cdnUrl);
+  if (cached) return cached;
+
+  const res = await fetch(cdnUrl);
+
+  if (!res.ok) {
+    throw new Error(`Failed to fetch ${cdnUrl}: ${res.status} ${res.statusText}`);
+  }
+
+  const content = Buffer.from(await res.arrayBuffer());
+  const hash = generateIntegrityHash(content);
+
+  moduleCache.set(cdnUrl, hash);
+
+  return hash;
 }
 
 /**

@@ -5,40 +5,45 @@ import {
   getFilePath,
   getModuleHash
 } from "../config/modules.js";
-function generateRegisterScripts(modules, repo) {
-  return modules.map((mod) => {
-    return {
-      canCopy: true,
-      displayName: getDisplayName(getFilePath(mod.path)),
-      hostedLocation: generateCdnUrl(repo, mod),
-      integrityHash: getModuleHash(repo, mod),
-      version: mod.version
-    };
-  });
+async function generateRegisterScripts(modules, repo) {
+  return Promise.all(
+    modules.map(async (mod) => {
+      const hash = await getModuleHash(repo, mod);
+      return {
+        canCopy: true,
+        displayName: getDisplayName(getFilePath(mod.path)),
+        hostedLocation: generateCdnUrl(repo, mod),
+        integrityHash: hash,
+        version: mod.version
+      };
+    })
+  );
 }
-function generateUpsertScripts({
+async function generateUpsertScripts({
   modules,
   scriptsByHash,
   repo,
   dryRun = false
 }) {
-  return modules.map((mod) => {
-    const scriptHash = getModuleHash(repo, mod);
-    const script = scriptsByHash.get(scriptHash);
-    if (!dryRun && !script?.id) {
-      logger.debug("Found script is invalid:", logger.newLine, script);
-      throw new Error("Cannot upsert unregistered script");
-    }
-    return {
-      id: script?.id ?? `${getFilePath(mod.path)} [unregistered]`,
-      location: mod.path.endsWith(".css") ? "header" : "footer",
-      version: mod.version,
-      attributes: {
-        "data-peakflow-hmr": "true",
-        "data-peakflow-local": getFilePath(mod.path)
+  return Promise.all(
+    modules.map(async (mod) => {
+      const scriptHash = await getModuleHash(repo, mod);
+      const script = scriptsByHash.get(scriptHash);
+      if (!dryRun && !script?.id) {
+        logger.debug("Found script is invalid:", logger.newLine, script);
+        throw new Error("Cannot upsert unregistered script");
       }
-    };
-  });
+      return {
+        id: script?.id ?? `${getFilePath(mod.path)} [unregistered]`,
+        location: mod.path.endsWith(".css") ? "header" : "footer",
+        version: mod.version,
+        attributes: {
+          "data-peakflow-hmr": "true",
+          "data-peakflow-local": getFilePath(mod.path)
+        }
+      };
+    })
+  );
 }
 export {
   generateRegisterScripts,

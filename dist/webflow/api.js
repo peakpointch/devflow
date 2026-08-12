@@ -67,7 +67,7 @@ async function registerMissingScripts({
   verbose = false
 }) {
   const modules = getUniqueModules(config.environments);
-  const allRequests = generateRegisterScripts(modules, config.repository);
+  const allRequests = await generateRegisterScripts(modules, config.repository);
   const scriptsByHash = new Map(
     scripts.map((script) => [script.integrityHash, script])
   );
@@ -150,7 +150,7 @@ async function publishEnvironment({
     return;
   }
   const matchedPages = matchPages(pages, env.pages);
-  const upsertScriptsRequest = generateUpsertScripts({
+  const upsertScriptsRequest = await generateUpsertScripts({
     modules: env.modules,
     scriptsByHash: scripts,
     repo: config.repository,

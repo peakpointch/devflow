@@ -117,7 +117,7 @@ export async function registerMissingScripts({
   Map<string, Webflow.CustomCodeHostedResponse>
 > {
   const modules = getUniqueModules(config.environments);
-  const allRequests = generateRegisterScripts(modules, config.repository);
+  const allRequests = await generateRegisterScripts(modules, config.repository);
 
   const scriptsByHash = new Map(
     scripts.map((script) => [script.integrityHash, script]),
@@ -241,7 +241,7 @@ export async function publishEnvironment({
   }
 
   const matchedPages = matchPages(pages, env.pages);
-  const upsertScriptsRequest = generateUpsertScripts({
+  const upsertScriptsRequest = await generateUpsertScripts({
     modules: env.modules,
     scriptsByHash: scripts,
     repo: config.repository,
