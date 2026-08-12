@@ -56,7 +56,7 @@ export function generateUpsertScripts({
     }
 
     return {
-      id: script?.id ?? "not_registered_yet",
+      id: script?.id ?? `${mod.file} [unregistered]`,
       location: mod.file.endsWith(".css") ? "header" : "footer",
       version: mod.version,
       attributes: {
