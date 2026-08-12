@@ -1,3 +1,4 @@
+import stringWidth from "string-width";
 const nodeEnvironments = [
   "development",
   "production",
@@ -54,14 +55,38 @@ function capitalize(str) {
 function pluralize(str, count) {
   return count === 1 ? str : `${str}s`;
 }
+function rightPad(str, length, char = " ") {
+  const padding = length - stringWidth(str);
+  if (padding <= 0) return str;
+  return str + char.repeat(padding);
+}
+function leftPad(str, length, char = " ") {
+  const padding = length - stringWidth(str);
+  if (padding <= 0) return str;
+  return char.repeat(padding) + str;
+}
+function getMaxWidth(items, transform) {
+  let max = 0;
+  for (const item of items) {
+    const str = transform ? transform(item) : item;
+    const width = stringWidth(str);
+    if (width > max) {
+      max = width;
+    }
+  }
+  return max;
+}
 export {
   capitalize,
   errorToString,
   getErrorCode,
   getErrorMessage,
+  getMaxWidth,
   isNodeEnv,
   isPlainObject,
+  leftPad,
   nodeEnvironments,
   parseNodeEnv,
-  pluralize
+  pluralize,
+  rightPad
 };

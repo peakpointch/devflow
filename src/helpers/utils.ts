@@ -1,5 +1,5 @@
-import { logger } from "./taskLogger.js";
 import type { NodeEnv, PlainObject } from "../types/utils.js";
+import stringWidth from "string-width";
 
 export const nodeEnvironments: NodeEnv[] = [
   "development",
@@ -107,4 +107,44 @@ export function capitalize(str: string): string {
  */
 export function pluralize(str: string, count: number): string {
   return count === 1 ? str : `${str}s`;
+}
+
+export function rightPad(
+  str: string,
+  length: number,
+  char: string = " ",
+): string {
+  const padding = length - stringWidth(str);
+  if (padding <= 0) return str;
+  return str + char.repeat(padding);
+}
+
+export function leftPad(
+  str: string,
+  length: number,
+  char: string = " ",
+): string {
+  const padding = length - stringWidth(str);
+  if (padding <= 0) return str;
+  return char.repeat(padding) + str;
+}
+
+export function getMaxWidth(strings: string[]): number;
+export function getMaxWidth<T>(
+  items: T[],
+  transform: (item: T) => string,
+): number;
+export function getMaxWidth<T>(
+  items: T[],
+  transform?: (item: T) => string,
+): number {
+  let max = 0;
+  for (const item of items) {
+    const str = transform ? transform(item) : (item as string);
+    const width = stringWidth(str);
+    if (width > max) {
+      max = width;
+    }
+  }
+  return max;
 }
