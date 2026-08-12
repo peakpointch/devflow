@@ -12,10 +12,9 @@ import {
 } from "../webflow/api.js";
 import { logger } from "../helpers/taskLogger.js";
 import { errorToString } from "../helpers/utils.js";
+import { OptionDryRun, OptionJSON, OptionVerbose } from "../types/cli.js";
 
-interface CodePublishOptions {
-  dryRun?: boolean;
-}
+export type CodePublishOptions = OptionDryRun & OptionJSON & OptionVerbose;
 
 export async function codePublishAction(
   options: CodePublishOptions = {},
@@ -39,7 +38,9 @@ export async function codePublishAction(
     config,
     wfConfig,
     scripts: registeredScripts,
-    dryRun: options.dryRun ?? false,
+    dryRun: options.dryRun,
+    json: options.json,
+    verbose: options.verbose,
   });
 
   const pages = await fetchPages(client, wfConfig.siteId);
@@ -52,7 +53,9 @@ export async function codePublishAction(
         env,
         pages,
         scripts,
-        dryRun: options.dryRun ?? false,
+        dryRun: options.dryRun,
+        json: options.json,
+        verbose: options.verbose,
       }),
     ),
   );

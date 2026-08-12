@@ -26,7 +26,9 @@ async function codePublishAction(options = {}) {
     config,
     wfConfig,
     scripts: registeredScripts,
-    dryRun: options.dryRun ?? false
+    dryRun: options.dryRun,
+    json: options.json,
+    verbose: options.verbose
   });
   const pages = await fetchPages(client, wfConfig.siteId);
   await Promise.all(
@@ -37,7 +39,9 @@ async function codePublishAction(options = {}) {
         env,
         pages,
         scripts,
-        dryRun: options.dryRun ?? false
+        dryRun: options.dryRun,
+        json: options.json,
+        verbose: options.verbose
       })
     )
   );

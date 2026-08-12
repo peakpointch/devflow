@@ -71,6 +71,8 @@ code
   .command("publish")
   .description("Publish custom code modules to your Webflow site")
   .option("--dry-run", "Preview changes without publishing them")
+  .option("--json", "Output as JSON")
+  .option("--verbose", "Output all available information")
   .action(codePublishAction);
 
 code

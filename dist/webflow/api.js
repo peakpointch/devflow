@@ -1,3 +1,4 @@
+import chalk from "chalk";
 import { WebflowClient } from "webflow-api";
 import { getEnvModules, getUniqueModules } from "../config/modules.js";
 import { generateRegisterScripts, generateUpsertScripts } from "./scripts.js";
@@ -5,6 +6,7 @@ import { logger } from "../helpers/taskLogger.js";
 import { getIntegrationToken } from "../helpers/auth.js";
 import { matchPages } from "../helpers/pageMatcher.js";
 import { errorToString } from "../helpers/utils.js";
+import { Table } from "../helpers/table.js";
 function getWebflowClient() {
   try {
     const token = getIntegrationToken("webflow");
@@ -60,7 +62,9 @@ async function registerMissingScripts({
   config,
   client,
   wfConfig,
-  dryRun = false
+  dryRun = false,
+  json = false,
+  verbose = false
 }) {
   const modules = getUniqueModules(config.environments);
   const allRequests = generateRegisterScripts(modules, config.repository);
@@ -80,11 +84,34 @@ async function registerMissingScripts({
   logger.info(
     `Found ${logger.num(missingRequests.length)} new scripts to register.`
   );
+  if (missingRequests.length) {
+    if (json) {
+      logger.info("Request list:", logger.json(missingRequests));
+    } else if (verbose) {
+      const table = new Table(missingRequests, [
+        {
+          id: "Script",
+          getValue: (row) => row.displayName,
+          format: (cell) => logger.var(cell),
+          formatTitle: (cell) => chalk.bold(cell)
+        },
+        {
+          id: "Version",
+          getValue: (row) => row.version,
+          format: (cell) => chalk.dim(cell),
+          formatTitle: (cell) => chalk.bold(cell)
+        }
+      ]);
+      logger.continue(
+        table.toString({
+          titleRow: true,
+          prefix: logger.indent + " ",
+          rowCount: true
+        })
+      );
+    }
+  }
   if (dryRun) {
-    logger.debug(
-      "Request list:",
-      logger.json(missingRequests) + logger.newLine
-    );
     return scriptsToPublish;
   }
   const newScripts = await Promise.all(
@@ -108,27 +135,92 @@ async function publishEnvironment({
   client,
   pages,
   scripts,
-  dryRun
+  dryRun = false,
+  verbose = false,
+  json = false
 }) {
   const matchedPages = matchPages(pages, env.pages);
   const envModules = getEnvModules(env);
-  const upsertScriptsRequest = generateUpsertScripts(
-    envModules,
-    scripts,
-    config.repository
-  );
-  logger.info(
-    `Publishing ${logger.num(upsertScriptsRequest.length)} scripts to ${logger.num(matchedPages.length)} matched pages in ${logger.var(env.name)} environment.`
-  );
-  const logPages = matchedPages.map((page) => ({
-    title: page.title ?? "unknown",
-    seoTitle: page.seo?.title ?? "unknown",
-    publishedPath: page.publishedPath
-  }));
-  if (dryRun) {
-    logger.debug("Matched pages:", logger.json(logPages) + logger.newLine);
-    logger.debug("Scripts to upsert:", logger.json(upsertScriptsRequest));
+  const upsertScriptsRequest = generateUpsertScripts({
+    modules: envModules,
+    scriptsByHash: scripts,
+    repo: config.repository,
+    dryRun
+  });
+  if (!matchedPages.length) {
+    logger.info(
+      `Skipping ${logger.var(env.name)} environment due to ${logger.num(matchedPages.length)} matched pages.`
+    );
+    return;
   }
+  logger.info(
+    `Found ${logger.num(upsertScriptsRequest.length)} scripts to ${logger.num(matchedPages.length)} matched pages in ${logger.var(env.name)} environment.`
+  );
+  if (json) {
+    logger.info(
+      "Matched pages:",
+      logger.json(
+        matchedPages.map((page) => ({
+          title: page.title,
+          seoTitle: page.seo?.title,
+          publishedPath: page.publishedPath
+        }))
+      )
+    );
+    logger.info("Scripts to upsert:", logger.json(upsertScriptsRequest));
+  } else if (verbose) {
+    const pageTable = new Table(matchedPages, [
+      {
+        id: "Title",
+        align: "left",
+        getValue: (page) => page.title ?? "Unknown",
+        formatTitle: (cell) => chalk.bold(cell)
+      },
+      {
+        id: "Published Path",
+        align: "left",
+        getValue: (page) => page.publishedPath ?? "unknown",
+        format: (cell) => chalk.dim(cell),
+        formatTitle: (cell) => chalk.bold(cell)
+      }
+    ]);
+    const upsertTable = new Table(upsertScriptsRequest, [
+      {
+        id: "ID",
+        getValue: (row) => row.id,
+        formatTitle: (cell) => chalk.bold(cell)
+      },
+      {
+        id: "Version",
+        getValue: (row) => row.version,
+        formatTitle: (cell) => chalk.bold(cell)
+      },
+      {
+        id: "Location",
+        getValue: (row) => row.location,
+        formatTitle: (cell) => chalk.bold(cell)
+      }
+    ]);
+    logger.continue(logger.indent, "Matched pages:");
+    logger.continue(
+      pageTable.toString({
+        titleRow: true,
+        prefix: logger.indent + " ",
+        rowCount: true
+      }),
+      logger.newLine
+    );
+    logger.continue(logger.indent, "Scripts to upsert:");
+    logger.continue(
+      upsertTable.toString({
+        titleRow: true,
+        prefix: logger.indent + " ",
+        rowCount: true
+      }),
+      logger.newLine
+    );
+  }
+  if (dryRun) return;
   await Promise.all(
     matchedPages.map(
       (page) => (
@@ -144,6 +236,7 @@ async function publishEnvironment({
       )
     )
   );
+  logger.success(`Successfully published ${logger.var(env.name)} environment.`);
 }
 export {
   fetchCodeBlocks,

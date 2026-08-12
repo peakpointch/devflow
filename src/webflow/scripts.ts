@@ -9,6 +9,7 @@ import {
   getModuleHash,
 } from "../config/modules.js";
 import { generateIntegrityHash } from "../helpers/hash.js";
+import { OptionDryRun } from "../types/cli.js";
 
 /**
  * Build a register request for each unique module
@@ -30,30 +31,37 @@ export function generateRegisterScripts(
   });
 }
 
+export type GenerateUpsertScriptsOptions = {
+  modules: PeakflowModule[];
+  scriptsByHash: Map<string, Webflow.CustomCodeHostedResponse>;
+  repo: PeakflowRepo;
+} & OptionDryRun;
+
 /**
  * Build an upsert request for each script inside all modules
  */
-export function generateUpsertScripts(
-  modules: PeakflowModule[],
-  scriptsByHash: Map<string, Webflow.CustomCodeHostedResponse>,
-  repo: PeakflowRepo,
-): Webflow.ScriptApply[] {
+export function generateUpsertScripts({
+  modules,
+  scriptsByHash,
+  repo,
+  dryRun = false,
+}: GenerateUpsertScriptsOptions): Webflow.ScriptApply[] {
   return modules.map((mod) => {
     const scriptHash = getModuleHash(mod, repo);
     const script = scriptsByHash.get(scriptHash);
 
-    if (!script?.id) {
-      logger.debug("Script that was found is invalid:", logger.newLine, script);
+    if (!dryRun && !script?.id) {
+      logger.debug("Found script is invalid:", logger.newLine, script);
       throw new Error("Cannot upsert unregistered script");
     }
 
     return {
-      id: script.id,
+      id: script?.id ?? "not_registered_yet",
       location: mod.file.endsWith(".css") ? "header" : "footer",
       version: mod.version,
       attributes: {
         "data-peakflow-hmr": "true",
-        "data-peakflow-local": `dist/${mod.file}`,
+        "data-peakflow-local": mod.file,
       },
     };
   });

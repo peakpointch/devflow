@@ -28,7 +28,7 @@ program.command("build").description("Build the production bundle").action(build
 auth.command("login").description("Log in and store credentials").action(authLoginAction);
 auth.command("logout").description("Log out and remove stored credentials").action(authLogoutAction);
 auth.command("status").description("Show current authentication status").action(authStatusAction);
-code.command("publish").description("Publish custom code modules to your Webflow site").option("--dry-run", "Preview changes without publishing them").action(codePublishAction);
+code.command("publish").description("Publish custom code modules to your Webflow site").option("--dry-run", "Preview changes without publishing them").option("--json", "Output as JSON").option("--verbose", "Output all available information").action(codePublishAction);
 code.command("unpublish").description("Unpublish all custom code modules from your Webflow site").action(codeUnpublishAction);
 code.command("list").description("List all published custom code modules").option("--json", "Output as JSON").option("--verbose", "Output all available information").action(codeListAction);
 program.command("wistia").description("Get binary video urls from wistia").argument("<media-id>", "Identifier of the wistia asset").action(wistiaAction);

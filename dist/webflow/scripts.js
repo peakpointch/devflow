@@ -19,21 +19,26 @@ function generateRegisterScripts(modules, repo) {
     };
   });
 }
-function generateUpsertScripts(modules, scriptsByHash, repo) {
+function generateUpsertScripts({
+  modules,
+  scriptsByHash,
+  repo,
+  dryRun = false
+}) {
   return modules.map((mod) => {
     const scriptHash = getModuleHash(mod, repo);
     const script = scriptsByHash.get(scriptHash);
-    if (!script?.id) {
-      logger.debug("Script that was found is invalid:", logger.newLine, script);
+    if (!dryRun && !script?.id) {
+      logger.debug("Found script is invalid:", logger.newLine, script);
       throw new Error("Cannot upsert unregistered script");
     }
     return {
-      id: script.id,
+      id: script?.id ?? "not_registered_yet",
       location: mod.file.endsWith(".css") ? "header" : "footer",
       version: mod.version,
       attributes: {
         "data-peakflow-hmr": "true",
-        "data-peakflow-local": `dist/${mod.file}`
+        "data-peakflow-local": mod.file
       }
     };
   });
