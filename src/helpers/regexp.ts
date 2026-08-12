@@ -1,3 +1,5 @@
+import picomatch from "picomatch";
+
 /**
  * Anchors a `RegExp` to the start, end or to the full string
  * @param pattern The `RegExp` to anchor
@@ -60,20 +62,13 @@ export function joinRegExp(parts: RegExpArray, flags?: string): RegExp {
 }
 
 /**
- * Converts a glob pattern to a regex
- * - `?` matches a single character, except `/`
- * - `*` matches a single path segment
- * - `**` matches any depth
- * - exact strings match exactly
+ * Converts a glob pattern to a regex.
+ *
+ * Supports standard glob patterns, globstars, extglobs,
+ * braces, character classes, and pattern negation.
  */
 export function globToRegExp(pattern: string): RegExp {
-  // Escape special regex characters except * and /
-  let regexPattern = pattern
-    .replace(/[.+^${}()|[\]\\]/g, "\\$&") // Escape regex characters
-    .replace(/\*\*/g, "<!DOUBLESTAR!>") // Temporarily replace **
-    .replace(/\*/g, "[^/]*") // * = single segment
-    .replace(/<!DOUBLESTAR!>/g, ".*") // ** = any depth
-    .replace(/\?/g, "[^/]"); // ? = single character
-
-  return new RegExp(`^${regexPattern}$`);
+  return picomatch.makeRe(pattern, {
+    dot: true,
+  });
 }

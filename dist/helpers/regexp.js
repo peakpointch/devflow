@@ -1,3 +1,4 @@
+import picomatch from "picomatch";
 function anchorRegExp(pattern, type = "full") {
   const start = ["start", "full"].includes(type) ? "^" : "";
   const end = ["end", "full"].includes(type) ? "$" : "";
@@ -22,8 +23,9 @@ function joinRegExp(parts, flags) {
   );
 }
 function globToRegExp(pattern) {
-  let regexPattern = pattern.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*\*/g, "<!DOUBLESTAR!>").replace(/\*/g, "[^/]*").replace(/<!DOUBLESTAR!>/g, ".*").replace(/\?/g, "[^/]");
-  return new RegExp(`^${regexPattern}$`);
+  return picomatch.makeRe(pattern, {
+    dot: true
+  });
 }
 export {
   anchorRegExp,
