@@ -26,6 +26,21 @@ export function matchPages(
   return pages.filter((page) => {
     const path = page.publishedPath ?? "";
 
+    // Reject archived or drafted pages
+    if (page.archived === true || page.draft === true) {
+      return false;
+    }
+
+    // Check collection templates
+    if (page.collectionId) {
+      const isPublished = Boolean(page.seo?.title);
+
+      // Reject unpublished collection templates
+      if (!isPublished) {
+        return false;
+      }
+    }
+
     const isIncluded =
       included.length === 0 ||
       included.some((pattern) => matchesGlob(path, pattern));
