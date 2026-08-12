@@ -8,7 +8,7 @@ export default defineConfig({
     owner: "username",
     name: "project",
   },
-  server: {
+  devServer: {
     webflowSubdomain: "YOUR_WEBFLOW_SUBDOMAIN",
     port: 3000,
     livereload: true,

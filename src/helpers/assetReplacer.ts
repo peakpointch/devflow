@@ -4,7 +4,7 @@ import { stringifyAssets, updateAssetUrls } from "./assetTransformer.js";
 import { routes } from "./routes.js";
 
 export function getReloadScript(config: PeakflowConfig): string {
-  if (!config.server.livereload) return "";
+  if (!config.devServer.livereload) return "";
   return `<script src="${routes.server}/src/extension/dist/client.js" defer></script>`;
 }
 

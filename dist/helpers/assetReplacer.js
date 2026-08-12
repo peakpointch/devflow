@@ -2,7 +2,7 @@ import { extractAssets } from "./assetParser.js";
 import { stringifyAssets, updateAssetUrls } from "./assetTransformer.js";
 import { routes } from "./routes.js";
 function getReloadScript(config) {
-  if (!config.server.livereload) return "";
+  if (!config.devServer.livereload) return "";
   return `<script src="${routes.server}/src/extension/dist/client.js" defer></script>`;
 }
 function replaceAssets(html, config) {

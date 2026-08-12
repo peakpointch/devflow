@@ -11,7 +11,7 @@ async function devAction() {
   await buildDev(config);
   startWebflowProxy(config, reloadEmitter);
   reloadEmitter.emit("script-change", config.build.modules);
-  const watcher = chokidar.watch(config.server.watchList, {
+  const watcher = chokidar.watch(config.devServer.watchList, {
     ignoreInitial: true
   });
   watcher.on("all", async (_, filePath) => {

@@ -23,9 +23,10 @@ export async function devAction() {
   reloadEmitter.emit("script-change", config.build.modules);
 
   // Watch for changes
-  const watcher = chokidar.watch(config.server.watchList, {
+  const watcher = chokidar.watch(config.devServer.watchList, {
     ignoreInitial: true,
   });
+
   watcher.on("all", async (_, filePath) => {
     if (/\.(js|ts)$/.test(filePath)) {
       logger.info("File change detected, rebuilding...");

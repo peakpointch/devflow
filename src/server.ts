@@ -65,7 +65,7 @@ async function requestWebflowGET(
   config: PeakflowConfig,
   proxyReq: express.Request,
 ) {
-  const baseUrl = getWebflowBaseUrl(config.server.webflowSubdomain);
+  const baseUrl = getWebflowBaseUrl(config.devServer.webflowSubdomain);
   return await axios.get(`${baseUrl}${proxyReq.url}`, {
     headers: {
       ...getRequestHeaders(baseUrl, proxyReq),
@@ -149,7 +149,7 @@ async function requestWebflowAuthPOST(
   proxyReq: express.Request,
 ) {
   const body = new URLSearchParams(proxyReq.body).toString();
-  const baseUrl = getWebflowBaseUrl(config.server.webflowSubdomain);
+  const baseUrl = getWebflowBaseUrl(config.devServer.webflowSubdomain);
 
   return await axios.post(`${baseUrl}${proxyReq.url}`, body, {
     headers: {
@@ -222,7 +222,7 @@ function setupLivereload(
 ): void {
   const wsInstance = expressWs(app); // typed wrapper
 
-  if (config.server.livereload) {
+  if (config.devServer.livereload) {
     wsInstance.app.ws(routes.livereload, () => {
       serverLogger.connection({
         protocol: "WS",
@@ -236,7 +236,7 @@ function setupLivereload(
     wsInstance
       .getWss()
       .clients.forEach(
-        (client) => config.server.livereload && client.send("reload"),
+        (client) => config.devServer.livereload && client.send("reload"),
       );
   });
 
@@ -244,7 +244,7 @@ function setupLivereload(
     wsInstance
       .getWss()
       .clients.forEach(
-        (client) => config.server.livereload && client.send("reload-css"),
+        (client) => config.devServer.livereload && client.send("reload-css"),
       );
   });
 }
@@ -279,7 +279,7 @@ export function startWebflowProxy(
   routeGetRequests(app, config);
   routeWebflowAuthRequests(app, config);
 
-  app.listen(config.server.port, () => {
-    logger.success(`Local server http://localhost:${config.server.port}`);
+  app.listen(config.devServer.port, () => {
+    logger.success(`Local server http://localhost:${config.devServer.port}`);
   });
 }

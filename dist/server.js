@@ -35,7 +35,7 @@ function getRequestHeaders(baseUrl, proxyReq) {
   };
 }
 async function requestWebflowGET(config, proxyReq) {
-  const baseUrl = getWebflowBaseUrl(config.server.webflowSubdomain);
+  const baseUrl = getWebflowBaseUrl(config.devServer.webflowSubdomain);
   return await axios.get(`${baseUrl}${proxyReq.url}`, {
     headers: {
       ...getRequestHeaders(baseUrl, proxyReq),
@@ -93,7 +93,7 @@ ${err?.response?.data}`
 }
 async function requestWebflowAuthPOST(config, proxyReq) {
   const body = new URLSearchParams(proxyReq.body).toString();
-  const baseUrl = getWebflowBaseUrl(config.server.webflowSubdomain);
+  const baseUrl = getWebflowBaseUrl(config.devServer.webflowSubdomain);
   return await axios.post(`${baseUrl}${proxyReq.url}`, body, {
     headers: {
       ...getRequestHeaders(baseUrl, proxyReq),
@@ -138,7 +138,7 @@ ${err?.response?.data}`
 }
 function setupLivereload(app, reloadEmitter, config) {
   const wsInstance = expressWs(app);
-  if (config.server.livereload) {
+  if (config.devServer.livereload) {
     wsInstance.app.ws(routes.livereload, () => {
       serverLogger.connection({
         protocol: "WS",
@@ -149,12 +149,12 @@ function setupLivereload(app, reloadEmitter, config) {
   }
   reloadEmitter.on("script-change", () => {
     wsInstance.getWss().clients.forEach(
-      (client) => config.server.livereload && client.send("reload")
+      (client) => config.devServer.livereload && client.send("reload")
     );
   });
   reloadEmitter.on("styles-change", () => {
     wsInstance.getWss().clients.forEach(
-      (client) => config.server.livereload && client.send("reload-css")
+      (client) => config.devServer.livereload && client.send("reload-css")
     );
   });
 }
@@ -177,8 +177,8 @@ function startWebflowProxy(config, reloadEmitter) {
   setupLivereload(app, reloadEmitter, config);
   routeGetRequests(app, config);
   routeWebflowAuthRequests(app, config);
-  app.listen(config.server.port, () => {
-    logger.success(`Local server http://localhost:${config.server.port}`);
+  app.listen(config.devServer.port, () => {
+    logger.success(`Local server http://localhost:${config.devServer.port}`);
   });
 }
 export {
