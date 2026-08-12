@@ -107,6 +107,13 @@ class TaskLogger extends CliLogger {
       ...msg
     );
   }
+  unorderedList(list, format) {
+    const formatted = list.map((item) => {
+      const formatted2 = format ? format(item) : `${item}`;
+      return this.indent + " \u2022 " + formatted2;
+    }).join(this.newLine);
+    this.continue(formatted);
+  }
 }
 const logger = new TaskLogger(void 0, true);
 const authLogger = new TaskLogger("Auth");

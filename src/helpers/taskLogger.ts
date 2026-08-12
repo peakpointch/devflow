@@ -136,6 +136,17 @@ export class TaskLogger extends CliLogger {
       ...msg,
     );
   }
+
+  public unorderedList<T>(list: Array<T>, format?: (item: T) => string) {
+    const formatted = list
+      .map((item) => {
+        const formatted = format ? format(item) : `${item}`;
+        return this.indent + " • " + formatted;
+      })
+      .join(this.newLine);
+
+    this.continue(formatted);
+  }
 }
 
 export const logger = new TaskLogger(undefined, true);
