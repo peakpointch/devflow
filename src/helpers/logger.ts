@@ -65,6 +65,7 @@ export class CliLogger {
 
     throw new TypeError("Invalid log level");
   }
+
   public set colors(colors: Record<string, ChalkInstance>) {
     this.instanceColors = {
       ...this.instanceColors,
@@ -92,7 +93,7 @@ export class CliLogger {
 
     return msg.map((part) =>
       typeof part === "string"
-        ? part.replace(this.indent, customIndent ?? indent)
+        ? part.replaceAll(this.indent, customIndent ?? indent)
         : part,
     );
   }

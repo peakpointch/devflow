@@ -71,7 +71,7 @@ class CliLogger {
   replaceIndent(msg, customIndent) {
     const indent = " ".repeat(stringWidth(this.prefix));
     return msg.map(
-      (part) => typeof part === "string" ? part.replace(this.indent, customIndent ?? indent) : part
+      (part) => typeof part === "string" ? part.replaceAll(this.indent, customIndent ?? indent) : part
     );
   }
   get newLine() {
