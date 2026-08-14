@@ -1,5 +1,5 @@
-import { AssetAttributes, ExtractedAsset } from "../types/assets";
-import { dataset } from "./dataset";
+import type { AssetAttributes, ExtractedAsset } from "../types/assets.js";
+import { dataset } from "./dataset.js";
 
 /**
  * Generic parser for HTML attributes
@@ -42,7 +42,7 @@ export function extractAssets(html: string): ExtractedAsset[] {
   for (const { regex, type } of patterns) {
     let match: RegExpExecArray | null;
     while ((match = regex.exec(html))) {
-      const attrs = parseAttributes(match[1]);
+      const attrs = parseAttributes(match[1] || "");
 
       if (
         dataset.attr.hmr in attrs &&

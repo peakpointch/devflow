@@ -1,5 +1,5 @@
 import { wf } from "peakflow/webflow";
-import { Livereload } from "../helpers/livereload";
+import { Livereload } from "../helpers/livereload.js";
 
 declare global {
   interface Window {
@@ -20,10 +20,10 @@ function initialize(): void {
         const lr = Livereload.getInstance();
 
         if (message.enabled) {
-          console.log(`[Devflow] Connecting to port: ${message.port}`);
+          lr.log(`Connecting to port: ${message.port}`);
           setupAndStart(message.port);
         } else {
-          console.log(`[Devflow] Disconnecting...`);
+          lr.log(`Disconnecting...`);
           lr.stop();
         }
       }

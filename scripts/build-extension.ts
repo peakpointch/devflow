@@ -1,10 +1,24 @@
 import * as esbuild from "esbuild";
-import vuePlugin from "esbuild-plugin-vue3";
+import fs from "node:fs";
+import path from "node:path";
 import postCSSPlugin from "esbuild-postcss";
-import fs from "fs";
-import { cleanDirExcept } from "./clean-dir";
-import chalk from "chalk";
-import path from "path";
+import vuePlugin from "esbuild-plugin-vue3";
+import { parseArgs } from "node:util";
+
+import { buildLogger as logger } from "../src/helpers/taskLogger.js";
+import { cleanDirExcept } from "./clean-dir.js";
+import { parseNodeEnv } from "../src/helpers/utils.js";
+import type { NodeEnv } from "../src/types/utils.js";
+
+const args = parseArgs({
+  options: {
+    env: {
+      type: "string",
+      short: "e",
+      default: "production",
+    },
+  },
+});
 
 const outdir = "src/extension/dist";
 
@@ -12,14 +26,14 @@ function getManifest(): any {
   return JSON.stringify(
     JSON.parse(
       fs.readFileSync(
-        path.resolve(__dirname, "../src/extension/manifest.json"),
+        path.resolve(import.meta.dirname, "../src/extension/manifest.json"),
         "utf-8",
       ),
     ),
   );
 }
 
-async function buildExtension() {
+async function buildExtension(environment: NodeEnv = "production") {
   cleanDirExcept(outdir);
 
   const entryPoints = [
@@ -27,6 +41,9 @@ async function buildExtension() {
     "src/extension/popup.ts",
     "src/extension/main.css",
   ];
+
+  logger.setLevel(1);
+  logger.info(`Extension: Building ${environment} bundle...`);
 
   await esbuild.build({
     bundle: true,
@@ -36,19 +53,21 @@ async function buildExtension() {
     platform: "browser",
     conditions: ["style"],
     plugins: [vuePlugin(), postCSSPlugin()],
-    minify: false,
+    minify: true,
     define: {
       __VUE_OPTIONS_API__: "false", // Disable for smaller bundle
       __VUE_PROD_DEVTOOLS__: "false",
-      "process.env.NODE_ENV": '"production"',
+      "process.env.NODE_ENV": `"${environment}"`,
       __manifest__: getManifest(),
     },
   });
 
-  console.log(
-    chalk.green("[Build Complete]"),
-    `extension: ${entryPoints.length} files compiled to ${outdir}`,
+  logger.success(
+    `Extension: Compiled ${logger.num(entryPoints.length)} files to ${logger.var(outdir)} for ${logger.var(environment)}.`,
   );
 }
 
-buildExtension().catch(() => process.exit(1));
+buildExtension(parseNodeEnv(args.values.env)).catch((reason) => {
+  logger.error("Error while building extension:", reason);
+  process.exit(1);
+});

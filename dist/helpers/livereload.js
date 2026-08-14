@@ -1,29 +1,13 @@
-var __defProp = Object.defineProperty;
-var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
-var __getOwnPropNames = Object.getOwnPropertyNames;
-var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __export = (target, all) => {
-  for (var name in all)
-    __defProp(target, name, { get: all[name], enumerable: true });
-};
-var __copyProps = (to, from, except, desc) => {
-  if (from && typeof from === "object" || typeof from === "function") {
-    for (let key of __getOwnPropNames(from))
-      if (!__hasOwnProp.call(to, key) && key !== except)
-        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
-  }
-  return to;
-};
-var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
-var livereload_exports = {};
-__export(livereload_exports, {
-  Livereload: () => Livereload
-});
-module.exports = __toCommonJS(livereload_exports);
-var import_webflow = require("peakflow/webflow");
-var import_dataset = require("./dataset");
-var import_routes = require("./routes");
+import { wf } from "peakflow/webflow";
+import { dataset } from "./dataset.js";
+import { routes } from "./routes.js";
 class Livereload {
+  static instance;
+  socket;
+  options = {
+    port: 3e3,
+    enabled: true
+  };
   constructor() {
   }
   static getInstance() {
@@ -33,20 +17,20 @@ class Livereload {
     return Livereload.instance;
   }
   log(...message) {
-    console.log(`[Devflow]:`, ...message);
+    console.log(`[Dev Server]:`, ...message);
   }
   reload() {
     window.location.reload();
   }
   reloadCss(host) {
-    if (!import_webflow.wf.doc) return;
-    const links = import_webflow.wf.doc.querySelectorAll(
-      `link[rel="stylesheet"][${import_dataset.dataset.attr.hmr}="true"]`
+    if (!wf.doc) return;
+    const links = wf.doc.querySelectorAll(
+      `link[rel="stylesheet"][${dataset.attr.hmr}="true"]`
     );
     links.forEach((link) => {
-      const { local } = import_dataset.dataset.parse(link);
+      const { local } = dataset.parse(link);
       const url = new URL(`${host}/${local}`);
-      url.searchParams.set("devflow-t", Date.now().toString());
+      url.searchParams.set("peakflow-t", Date.now().toString());
       link.href = url.toString();
     });
     this.log(
@@ -54,12 +38,12 @@ class Livereload {
     );
   }
   start() {
-    const wsUrl = `ws://localhost:${this.options.port}${import_routes.routes.livereload}`;
-    const host = `http://localhost:${this.options.port}${import_routes.routes.app}`;
+    const wsUrl = `ws://localhost:${this.options.port}${routes.livereload}`;
+    const host = `http://localhost:${this.options.port}${routes.app}`;
     this.stop();
     this.socket = new WebSocket(wsUrl);
     this.socket.onmessage = (event) => {
-      if (event.data === "reload" && import_webflow.wf.env !== "designer") {
+      if (event.data === "reload" && wf.env !== "designer") {
         this.reload();
       } else if (event.data === "reload-css") {
         this.reloadCss(host);
@@ -81,7 +65,6 @@ class Livereload {
     if (this.socket) this.socket.close();
   }
 }
-// Annotate the CommonJS export names for ESM import in node:
-0 && (module.exports = {
+export {
   Livereload
-});
+};

@@ -1,56 +1,96 @@
 #! /usr/bin/env node
 
-import yargs from "yargs";
-import { hideBin } from "yargs/helpers";
-import builder from "./builder";
-import devflow from "./devflow";
-import initConfig from "./initialize";
-import chalk from "chalk";
+import { Command } from "commander";
 
-export const prefixX = `${chalk.bgMagenta(" xAtom ")} ⏩`;
-const configFileName = "devflow.json";
+import { initialize } from "./helpers/initialize.js";
+import { initAction } from "./commands/initAction.js";
+import { configAction } from "./commands/configAction.js";
+import { devAction } from "./commands/devAction.js";
+import { buildAction } from "./commands/buildAction.js";
+import { wistiaAction } from "./commands/wistiaAction.js";
+import {
+  authLoginAction,
+  authLogoutAction,
+  authStatusAction,
+} from "./commands/authAction.js";
+import {
+  codeListAction,
+  codePublishAction,
+  codeUnpublishAction,
+} from "./commands/codeAction.js";
 
-yargs(hideBin(process.argv))
-  .command(
-    "dev [config]",
-    "to start dev server",
-    (yargs) => {
-      return yargs.positional("config", {
-        describe: "config file path",
-        default: configFileName,
-      });
-    },
-    (arg) => {
-      devflow(arg.config as string);
-    },
-  )
-  .command(
-    "build [config]",
-    "build production bundle",
-    (yargs) => {
-      return yargs.positional("config", {
-        describe: "config file path",
-        default: configFileName,
-      });
-    },
-    (arg) => {
-      builder(arg.config as string);
-    },
-  )
-  .command(
-    "init [file]",
-    "create devflow.json configuration file",
-    (yargs) => {
-      return yargs.positional("file", {
-        describe: "config file name",
-        default: configFileName,
-      });
-    },
-    (arg) => {
-      initConfig(arg.file as string);
-    },
-  )
-  .help()
-  .demandCommand()
-  .recommendCommands()
-  .parse();
+initialize();
+
+const program = new Command();
+
+const auth = program.command("auth").description("Manage authentication");
+const code = program.command("code").description("Manage Webflow custom code");
+
+program
+  .name("peakflow")
+  .description("Manage your Webflow custom code projects.")
+  .version("0.1.0");
+
+program
+  .command("init")
+  .description("Create a new project from the official template")
+  .argument("<project-name>", "Name of the project folder")
+  .action(initAction);
+
+program
+  .command("config")
+  .description("Create a peakflow.config.ts file")
+  .action(configAction);
+
+program
+  .command("dev")
+  .description("Start the development server")
+  .action(devAction);
+
+program
+  .command("build")
+  .description("Build the production bundle")
+  .action(buildAction);
+
+auth
+  .command("login")
+  .description("Log in and store credentials")
+  .action(authLoginAction);
+
+auth
+  .command("logout")
+  .description("Log out and remove stored credentials")
+  .action(authLogoutAction);
+
+auth
+  .command("status")
+  .description("Show current authentication status")
+  .action(authStatusAction);
+
+code
+  .command("publish")
+  .description("Publish custom code modules to your Webflow site")
+  .option("--dry-run", "Preview changes without publishing them")
+  .option("--json", "Output as JSON")
+  .option("--verbose", "Output all available information")
+  .action(codePublishAction);
+
+code
+  .command("unpublish")
+  .description("Unpublish all custom code modules from your Webflow site")
+  .action(codeUnpublishAction);
+
+code
+  .command("list")
+  .description("List all published custom code modules")
+  .option("--json", "Output as JSON")
+  .option("--verbose", "Output all available information")
+  .action(codeListAction);
+
+program
+  .command("wistia")
+  .description("Get binary video urls from wistia")
+  .argument("<media-id>", "Identifier of the wistia asset")
+  .action(wistiaAction);
+
+program.parse(process.argv);

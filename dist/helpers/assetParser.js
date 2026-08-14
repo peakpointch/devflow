@@ -1,27 +1,4 @@
-var __defProp = Object.defineProperty;
-var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
-var __getOwnPropNames = Object.getOwnPropertyNames;
-var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __export = (target, all) => {
-  for (var name in all)
-    __defProp(target, name, { get: all[name], enumerable: true });
-};
-var __copyProps = (to, from, except, desc) => {
-  if (from && typeof from === "object" || typeof from === "function") {
-    for (let key of __getOwnPropNames(from))
-      if (!__hasOwnProp.call(to, key) && key !== except)
-        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
-  }
-  return to;
-};
-var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
-var assetParser_exports = {};
-__export(assetParser_exports, {
-  extractAssets: () => extractAssets,
-  parseAttributes: () => parseAttributes
-});
-module.exports = __toCommonJS(assetParser_exports);
-var import_dataset = require("./dataset");
+import { dataset } from "./dataset.js";
 function parseAttributes(attrString) {
   const attrs = {};
   attrString.replace(/([^\s=]+)(?:="([^"]*)")?/g, (_, name, value) => {
@@ -53,12 +30,12 @@ function extractAssets(html) {
   for (const { regex, type } of patterns) {
     let match;
     while (match = regex.exec(html)) {
-      const attrs = parseAttributes(match[1]);
-      if (import_dataset.dataset.attr.hmr in attrs && import_dataset.dataset.attr.local in attrs && attrs[import_dataset.dataset.attr.hmr] === true && typeof attrs[import_dataset.dataset.attr.local] === "string") {
+      const attrs = parseAttributes(match[1] || "");
+      if (dataset.attr.hmr in attrs && dataset.attr.local in attrs && attrs[dataset.attr.hmr] === true && typeof attrs[dataset.attr.local] === "string") {
         assets.push({
           tag: match[0],
           attrs,
-          filePath: attrs[import_dataset.dataset.attr.local],
+          filePath: attrs[dataset.attr.local],
           type
         });
       }
@@ -66,8 +43,7 @@ function extractAssets(html) {
   }
   return assets;
 }
-// Annotate the CommonJS export names for ESM import in node:
-0 && (module.exports = {
+export {
   extractAssets,
   parseAttributes
-});
+};

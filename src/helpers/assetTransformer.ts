@@ -1,6 +1,6 @@
-import { ExtractedAsset } from "../types/assets";
-import { routes } from "./routes";
-import { dataset } from "./dataset";
+import type { ExtractedAsset } from "../types/assets.js";
+import { routes } from "./routes.js";
+import { dataset } from "./dataset.js";
 
 export function updateAssetUrls(assets: ExtractedAsset[]): ExtractedAsset[] {
   return assets.map((asset) => {
@@ -22,6 +22,7 @@ export function stringifyAssets(assets: ExtractedAsset[]): string {
   return assets
     .map((asset) => {
       const attrString = Object.entries(asset.attrs)
+        .filter(([k]) => k !== "integrity")
         .map(([k, v]) => (v === true ? k : `${k}="${v}"`))
         .join(" ");
 
