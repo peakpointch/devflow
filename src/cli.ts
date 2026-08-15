@@ -13,7 +13,7 @@ import {
   authLogoutAction,
   authStatusAction,
 } from "./commands/authAction.js";
-import { cmsListAction } from "./commands/cmsAction.js";
+import { cmsListAction, cmsPayloadAction } from "./commands/cmsAction.js";
 import {
   codeListAction,
   codePublishAction,
@@ -77,8 +77,8 @@ cms
 cms
   .command("payload")
   .description("Generate the JSON payload for a webflow collection")
-  .argument("<collection-slug>", "Slug of the collection")
-  .action(cmsListAction);
+  .argument("<slug>", "Slug of the collection")
+  .action(cmsPayloadAction);
 
 code
   .command("publish")

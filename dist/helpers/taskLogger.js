@@ -117,7 +117,7 @@ class TaskLogger extends CliLogger {
 }
 const logger = new TaskLogger(void 0, true);
 const authLogger = new TaskLogger("Auth");
-const cmsLogger = new TaskLogger("Cms");
+const cmsLogger = new TaskLogger("CMS");
 const configLogger = new TaskLogger("Config");
 const devLogger = new TaskLogger("Dev");
 const buildLogger = new TaskLogger("Build");

@@ -25,6 +25,32 @@ export function getWebflowClient(): WebflowClient {
   }
 }
 
+export async function fetchCollections(client: WebflowClient, siteId: string) {
+  let collections: Webflow.CollectionList;
+
+  try {
+    collections = await client.collections.list(siteId);
+  } catch (err) {
+    logger.error("Failed to fetch collections:", errorToString(err));
+    process.exit(1);
+  }
+
+  return collections.collections ?? [];
+}
+
+export async function fetchCollectionDetails(client: WebflowClient, collectionId: string) {
+  let collection: Webflow.Collection;
+
+  try {
+    collection = await client.collections.get(collectionId)
+  } catch (err) {
+    logger.error("Failed to fetch collection details:", errorToString(err));
+    process.exit(1);
+  }
+
+  return collection ?? [];
+}
+
 export async function fetchPages(client: WebflowClient, siteId: string) {
   let pages: Webflow.PageList;
 

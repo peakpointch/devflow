@@ -11,7 +11,7 @@ import {
   authLogoutAction,
   authStatusAction
 } from "./commands/authAction.js";
-import { cmsListAction } from "./commands/cmsAction.js";
+import { cmsListAction, cmsPayloadAction } from "./commands/cmsAction.js";
 import {
   codeListAction,
   codePublishAction,
@@ -31,7 +31,7 @@ auth.command("login").description("Log in and store credentials").action(authLog
 auth.command("logout").description("Log out and remove stored credentials").action(authLogoutAction);
 auth.command("status").description("Show current authentication status").action(authStatusAction);
 cms.command("list").description("List collections of you Webflow site").action(cmsListAction);
-cms.command("payload").description("Generate the JSON payload for a webflow collection").argument("<collection-slug>", "Slug of the collection").action(cmsListAction);
+cms.command("payload").description("Generate the JSON payload for a webflow collection").argument("<slug>", "Slug of the collection").action(cmsPayloadAction);
 code.command("publish").description("Publish custom code modules to your Webflow site").option("--dry-run", "Preview changes without publishing them").option("--json", "Output as JSON").option("--verbose", "Output all available information").action(codePublishAction);
 code.command("unpublish").description("Unpublish all custom code modules from your Webflow site").action(codeUnpublishAction);
 code.command("list").description("List all published custom code modules").option("--json", "Output as JSON").option("--verbose", "Output all available information").action(codeListAction);
