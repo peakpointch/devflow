@@ -76,6 +76,11 @@ function getMaxWidth(items, transform) {
   }
   return max;
 }
+function toCamelCase(str) {
+  return str.trim().split(/[^a-zA-Z0-9À-ž]+/).filter(Boolean).map(
+    (word, i) => i === 0 ? word.charAt(0).toLowerCase() + word.slice(1) : word.charAt(0).toUpperCase() + word.slice(1)
+  ).join("");
+}
 export {
   capitalize,
   errorToString,
@@ -88,5 +93,6 @@ export {
   nodeEnvironments,
   parseNodeEnv,
   pluralize,
-  rightPad
+  rightPad,
+  toCamelCase
 };
