@@ -78,6 +78,7 @@ cms
   .command("payload")
   .description("Generate the JSON payload for a webflow collection")
   .argument("<slug>", "Slug of the collection")
+  .option("--force-quotes", "Forces quotes on all field types")
   .action(cmsPayloadAction);
 
 code

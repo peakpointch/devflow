@@ -72,11 +72,13 @@ export async function cmsListAction({ json }: CMSListOptions): Promise<void> {
   }
 }
 
-export type CMSPayloadOptions = {};
+export type CMSPayloadOptions = {
+  forceQuotes?: boolean;
+};
 
 export async function cmsPayloadAction(
   slug: string,
-  {}: CMSPayloadOptions,
+  { forceQuotes = false }: CMSPayloadOptions,
 ): Promise<void> {
   const client = getWebflowClient();
   const wfConfig = getWebflowConfig();
@@ -98,7 +100,33 @@ export async function cmsPayloadAction(
 
   const collection = await fetchCollectionDetails(client, collectionId);
 
-  const { payload, skippedTypes } = generatePayload(collection);
+  const { payload, skippedTypes } = generatePayload(collection, {
+    forceQuotes,
+  });
+
+  const fieldTable = new Table(collection.fields, [
+    {
+      id: "Name",
+      getValue: (row) => row.displayName,
+      formatTitle: (cell) => chalk.bold(cell),
+    },
+    {
+      id: "Type",
+      getValue: (row) => row.type,
+      formatTitle: (cell) => chalk.bold(cell),
+    },
+  ]);
+
+  logger.info(
+    `The ${logger.var(slug)} collection has ${logger.num(collection.fields.length)} fields:`,
+  );
+  logger.continue(
+    fieldTable.toString({
+      titleRow: true,
+      rowCount: true,
+      prefix: logger.indent + " ",
+    }),
+  );
 
   if (skippedTypes.size) {
     const entries = Array.from(skippedTypes.entries());
@@ -106,15 +134,13 @@ export async function cmsPayloadAction(
 
     const skippedTable = new Table(entries, [
       {
-        id: "type",
-        title: "Type",
+        id: "Type",
         getValue: (row) => row[0],
         format: (cell) => logger.var(cell),
         formatTitle: (cell) => chalk.bold(cell),
       },
       {
-        id: "fields",
-        title: "Fields",
+        id: "Fields",
         getValue: (row) => row[1].join(", "),
         format: (cell) => chalk.dim(cell),
         formatTitle: (cell) => chalk.bold(cell),
@@ -135,19 +161,27 @@ export async function cmsPayloadAction(
   logger.continue(payload);
 }
 
+function formatWebflowFieldPath(fieldName: string): string {
+  return chalk.magenta(`{{wf:${fieldName}|Dynamo}}`);
+}
+
 function formatWebflowField(field: Webflow.Field): string {
   let slugProperty = "";
   if (field.type === "Reference") {
     slugProperty = "/Slug";
   }
-  return chalk.magenta(`{{wf:${field.displayName}${slugProperty}|Dynamo}}`);
+  return formatWebflowFieldPath(field.displayName + slugProperty);
 }
 
-function generatePayload(collection: Webflow.Collection) {
+function generatePayload(
+  collection: Webflow.Collection,
+  { forceQuotes }: CMSPayloadOptions,
+) {
   let payloadLines = [
     html.topen("script"),
     html.attr("type", "application/json"),
     html.attr("data-payload-element", "embed"),
+    html.attr("data-payload-id", formatWebflowFieldPath("Slug")),
     html.attr("data-cms-id", collection.slug!),
     html.tend,
     logger.newLine,
@@ -179,7 +213,7 @@ function generatePayload(collection: Webflow.Collection) {
 
     const line = [json.indent(2), json.str(toCamelCase(key)), json.assign];
 
-    if (noQuoteTypes.includes(field.type)) {
+    if (!forceQuotes && noQuoteTypes.includes(field.type)) {
       // This field should have no quotes in the json
       line.push(formatWebflowField(field));
     } else {
@@ -194,7 +228,12 @@ function generatePayload(collection: Webflow.Collection) {
     payloadLines.push(line.join(""));
   }
 
-  payloadLines.push(json.objEnd, logger.newLine, html.tclose("script"));
+  payloadLines.push(
+    json.indent(1),
+    json.objEnd,
+    logger.newLine,
+    html.tclose("script"),
+  );
 
   return { payload: payloadLines.join(""), skippedTypes };
 }

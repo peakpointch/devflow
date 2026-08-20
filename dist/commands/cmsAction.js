@@ -59,7 +59,7 @@ async function cmsListAction({ json: json2 }) {
     );
   }
 }
-async function cmsPayloadAction(slug, {}) {
+async function cmsPayloadAction(slug, { forceQuotes = false }) {
   const client = getWebflowClient();
   const wfConfig = getWebflowConfig();
   logger.info("Fetching collections...");
@@ -74,21 +74,43 @@ async function cmsPayloadAction(slug, {}) {
   logger.success(`Found collection with slug ${logger.var(slug)}.`);
   logger.info("Fetching collection details...");
   const collection = await fetchCollectionDetails(client, collectionId);
-  const { payload, skippedTypes } = generatePayload(collection);
+  const { payload, skippedTypes } = generatePayload(collection, {
+    forceQuotes
+  });
+  const fieldTable = new Table(collection.fields, [
+    {
+      id: "Name",
+      getValue: (row) => row.displayName,
+      formatTitle: (cell) => chalk.bold(cell)
+    },
+    {
+      id: "Type",
+      getValue: (row) => row.type,
+      formatTitle: (cell) => chalk.bold(cell)
+    }
+  ]);
+  logger.info(
+    `The ${logger.var(slug)} collection has ${logger.num(collection.fields.length)} fields:`
+  );
+  logger.continue(
+    fieldTable.toString({
+      titleRow: true,
+      rowCount: true,
+      prefix: logger.indent + " "
+    })
+  );
   if (skippedTypes.size) {
     const entries = Array.from(skippedTypes.entries());
     const count = entries.reduce((sum, [, fields]) => sum + fields.length, 0);
     const skippedTable = new Table(entries, [
       {
-        id: "type",
-        title: "Type",
+        id: "Type",
         getValue: (row) => row[0],
         format: (cell) => logger.var(cell),
         formatTitle: (cell) => chalk.bold(cell)
       },
       {
-        id: "fields",
-        title: "Fields",
+        id: "Fields",
         getValue: (row) => row[1].join(", "),
         format: (cell) => chalk.dim(cell),
         formatTitle: (cell) => chalk.bold(cell)
@@ -107,18 +129,22 @@ async function cmsPayloadAction(slug, {}) {
   logger.success("Payload generated:", logger.newLine);
   logger.continue(payload);
 }
+function formatWebflowFieldPath(fieldName) {
+  return chalk.magenta(`{{wf:${fieldName}|Dynamo}}`);
+}
 function formatWebflowField(field) {
   let slugProperty = "";
   if (field.type === "Reference") {
     slugProperty = "/Slug";
   }
-  return chalk.magenta(`{{wf:${field.displayName}${slugProperty}|Dynamo}}`);
+  return formatWebflowFieldPath(field.displayName + slugProperty);
 }
-function generatePayload(collection) {
+function generatePayload(collection, { forceQuotes }) {
   let payloadLines = [
     html.topen("script"),
     html.attr("type", "application/json"),
     html.attr("data-payload-element", "embed"),
+    html.attr("data-payload-id", formatWebflowFieldPath("Slug")),
     html.attr("data-cms-id", collection.slug),
     html.tend,
     logger.newLine,
@@ -143,7 +169,7 @@ function generatePayload(collection) {
     }
     const key = field.type === "Reference" ? `${field.displayName}Id` : field.displayName;
     const line = [json.indent(2), json.str(toCamelCase(key)), json.assign];
-    if (noQuoteTypes.includes(field.type)) {
+    if (!forceQuotes && noQuoteTypes.includes(field.type)) {
       line.push(formatWebflowField(field));
     } else {
       line.push(json.str(formatWebflowField(field)));
@@ -154,7 +180,12 @@ function generatePayload(collection) {
     line.push(logger.newLine);
     payloadLines.push(line.join(""));
   }
-  payloadLines.push(json.objEnd, logger.newLine, html.tclose("script"));
+  payloadLines.push(
+    json.indent(1),
+    json.objEnd,
+    logger.newLine,
+    html.tclose("script")
+  );
   return { payload: payloadLines.join(""), skippedTypes };
 }
 export {
