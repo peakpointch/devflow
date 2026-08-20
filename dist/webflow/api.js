@@ -18,6 +18,26 @@ function getWebflowClient() {
     process.exit(1);
   }
 }
+async function fetchCollections(client, siteId) {
+  let collections;
+  try {
+    collections = await client.collections.list(siteId);
+  } catch (err) {
+    logger.error("Failed to fetch collections:", errorToString(err));
+    process.exit(1);
+  }
+  return collections.collections ?? [];
+}
+async function fetchCollectionDetails(client, collectionId) {
+  let collection;
+  try {
+    collection = await client.collections.get(collectionId);
+  } catch (err) {
+    logger.error("Failed to fetch collection details:", errorToString(err));
+    process.exit(1);
+  }
+  return collection ?? [];
+}
 async function fetchPages(client, siteId) {
   let pages;
   try {
@@ -255,6 +275,8 @@ async function publishEnvironment({
 }
 export {
   fetchCodeBlocks,
+  fetchCollectionDetails,
+  fetchCollections,
   fetchPages,
   fetchScripts,
   getWebflowClient,

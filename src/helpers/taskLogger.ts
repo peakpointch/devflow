@@ -151,6 +151,7 @@ export class TaskLogger extends CliLogger {
 
 export const logger = new TaskLogger(undefined, true);
 export const authLogger = new TaskLogger("Auth");
+export const cmsLogger = new TaskLogger("CMS");
 export const configLogger = new TaskLogger("Config");
 export const devLogger = new TaskLogger("Dev");
 export const buildLogger = new TaskLogger("Build");

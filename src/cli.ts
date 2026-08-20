@@ -13,6 +13,7 @@ import {
   authLogoutAction,
   authStatusAction,
 } from "./commands/authAction.js";
+import { cmsListAction, cmsPayloadAction } from "./commands/cmsAction.js";
 import {
   codeListAction,
   codePublishAction,
@@ -24,6 +25,7 @@ initialize();
 const program = new Command();
 
 const auth = program.command("auth").description("Manage authentication");
+const cms = program.command("cms").description("CMS related commands");
 const code = program.command("code").description("Manage Webflow custom code");
 
 program
@@ -66,6 +68,18 @@ auth
   .command("status")
   .description("Show current authentication status")
   .action(authStatusAction);
+
+cms
+  .command("list")
+  .description("List collections of you Webflow site")
+  .action(cmsListAction);
+
+cms
+  .command("payload")
+  .description("Generate the JSON payload for a webflow collection")
+  .argument("<slug>", "Slug of the collection")
+  .option("--force-quotes", "Forces quotes on all field types")
+  .action(cmsPayloadAction);
 
 code
   .command("publish")
