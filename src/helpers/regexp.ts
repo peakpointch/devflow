@@ -18,6 +18,52 @@ export function anchorRegExp(
   return new RegExp(`${start}${pattern.source}${end}`);
 }
 
+export function groupRegExp(
+  patterns: RegExp | RegExpArray,
+  opts: {
+    name?: string;
+    optional?: boolean;
+    flags?: string;
+    nonCapturing?: boolean;
+  } = {},
+): RegExp {
+  const pattern = Array.isArray(patterns) ? joinRegExp(patterns) : patterns;
+  const groupStart = opts.nonCapturing
+    ? "(?:"
+    : opts.name
+      ? `(?<${opts.name}>`
+      : "(";
+  const groupEnd = opts.optional ? ")?" : ")";
+  const flags = opts.flags ?? pattern.flags;
+  return new RegExp(groupStart + pattern.source + groupEnd, flags);
+}
+
+export function optionalRegExp(
+  patterns: RegExp | RegExpArray,
+  flags?: string,
+): RegExp {
+  const pattern = Array.isArray(patterns) ? joinRegExp(patterns) : patterns;
+  const groupStart = "(?:";
+  const groupEnd = ")?";
+  return new RegExp(
+    groupStart + pattern.source + groupEnd,
+    flags ?? pattern.flags,
+  );
+}
+
+export function unionRegExp(patterns: RegExpArray, flags?: string): RegExp {
+  const combinedPattern = patterns
+    .map((part) => {
+      const partStr =
+        typeof part === "string" ? escapeRegExp(part) : part.source;
+      return partStr ? `(?:${partStr})` : "";
+    })
+    .filter(Boolean)
+    .join("|");
+
+  return new RegExp(combinedPattern, flags);
+}
+
 /**
  * Escape `RegExp` characters in a string
  * @example ```typescript
