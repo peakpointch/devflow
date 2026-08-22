@@ -2,7 +2,7 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 import { mergeOptions } from "peakflow/utils";
-import { anchorRegExp, strToRegExp, joinRegExp } from "./regexp.js";
+import { anchorRegExp, groupRegExp, strToRegExp, joinRegExp } from "./regexp.js";
 import { errorToString, isPlainObject } from "./utils.js";
 import type { OmitPartial } from "../types/utils.js";
 import type { PartialDeep } from "type-fest";
@@ -178,7 +178,7 @@ export function dotenvLineRegExp(key?: RegExp, value?: RegExp) {
   const parts = [
     dotenvr.sol,
     dotenvr.xport,
-    key !== undefined ? new RegExp(`(?<key>${key.source})`) : dotenvr.key,
+    key !== undefined ? groupRegExp(key, { name: "key" }) : dotenvr.key,
     dotenvr.assign,
     value !== undefined
       ? new RegExp(`(?<value>${value.source})`)

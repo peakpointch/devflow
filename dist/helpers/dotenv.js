@@ -2,7 +2,7 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 import { mergeOptions } from "peakflow/utils";
-import { anchorRegExp, strToRegExp, joinRegExp } from "./regexp.js";
+import { anchorRegExp, groupRegExp, strToRegExp, joinRegExp } from "./regexp.js";
 import { errorToString, isPlainObject } from "./utils.js";
 const dotenvDefaultOptions = {
   update: false,
@@ -45,7 +45,7 @@ function dotenvLineRegExp(key, value) {
   const parts = [
     dotenvr.sol,
     dotenvr.xport,
-    key !== void 0 ? new RegExp(`(?<key>${key.source})`) : dotenvr.key,
+    key !== void 0 ? groupRegExp(key, { name: "key" }) : dotenvr.key,
     dotenvr.assign,
     value !== void 0 ? new RegExp(`(?<value>${value.source})`) : dotenvr.value,
     dotenvr.comment,
