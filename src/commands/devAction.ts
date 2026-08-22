@@ -9,7 +9,11 @@ import { startWebflowProxy } from "../server.js";
 /**
  * Start the dev server (with livereload)
  */
-export async function devAction() {
+export interface DevOptions {
+  componentModuleId?: string;
+}
+
+export async function devAction({ componentModuleId }: DevOptions = {}) {
   const config = await parseConfigAction();
   const reloadEmitter = new events.EventEmitter();
 
@@ -19,7 +23,7 @@ export async function devAction() {
   await buildDev(config);
 
   // Start webflow proxy server, mirroring the .webflow.io staging domain
-  startWebflowProxy(config, reloadEmitter);
+  startWebflowProxy(config, reloadEmitter, componentModuleId);
   reloadEmitter.emit("script-change", config.build.modules);
 
   // Watch for changes

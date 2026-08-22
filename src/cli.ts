@@ -47,6 +47,10 @@ program
 program
   .command("dev")
   .description("Start the development server")
+  .option(
+    "--component-module-id <id>",
+    "Published Webflow Code Component module ID",
+  )
   .action(devAction);
 
 program

@@ -4,12 +4,12 @@ import { devLogger as logger } from "../helpers/taskLogger.js";
 import { parseConfigAction } from "../config/parse.js";
 import { buildDev } from "../build.js";
 import { startWebflowProxy } from "../server.js";
-async function devAction() {
+async function devAction({ componentModuleId } = {}) {
   const config = await parseConfigAction();
   const reloadEmitter = new events.EventEmitter();
   logger.info("Read the docs at https://github.com/peakpointch/peakflow-cli");
   await buildDev(config);
-  startWebflowProxy(config, reloadEmitter);
+  startWebflowProxy(config, reloadEmitter, componentModuleId);
   reloadEmitter.emit("script-change", config.build.modules);
   const watcher = chokidar.watch(config.devServer.watchList, {
     ignoreInitial: true
