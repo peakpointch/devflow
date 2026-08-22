@@ -6,7 +6,11 @@ import express from "express";
 import expressWs from "express-ws";
 import path from "path";
 
-import { replaceAssets } from "./helpers/assetReplacer.js";
+import {
+  loadLocalCodeComponentLibrary,
+  type LocalCodeComponentLibrary,
+} from "./helpers/codeComponentBridge.js";
+import { htmlPipeline as htmlPipeline } from "./helpers/htmlPipeline.js";
 import { routes } from "./helpers/routes.js";
 import { PeakflowConfig } from "peakflow/config";
 import { devLogger as logger } from "./helpers/taskLogger.js";
@@ -82,10 +86,17 @@ async function requestWebflowGET(
 /**
  * Routes all GET requests
  */
-function routeGetRequests(app: express.Express, config: PeakflowConfig): void {
+function routeGetRequests(
+  app: express.Express,
+  config: PeakflowConfig,
+  localCodeComponents: LocalCodeComponentLibrary | undefined,
+  componentModuleId?: string,
+): void {
   app.get("*", async (proxyReq, proxyRes) => {
     const performanceStart = performance.now();
     let assetMessage = "";
+    let componentMessage = "";
+    let componentDiagnosticMessage = "";
     try {
       // Skip devtools
       if (proxyReq.url.includes("devtools")) {
@@ -104,17 +115,30 @@ function routeGetRequests(app: express.Express, config: PeakflowConfig): void {
       const contentType = getContentType(webflowRes.headers);
       const responseIsHtml = contentType.includes("text/html");
 
-      // Replace assets if applicable
+      // Respond to the client
       if (responseIsHtml) {
         const html = Buffer.from(webflowRes.data).toString("utf8");
-        const result = replaceAssets(html, config);
 
-        assetMessage = `Replaced ${logger.num(result.removedCount)} ${pluralize(
-          "asset",
-          result.removedCount,
-        )}`;
+        /* ============================= */
+        /* ----- 1. Modifying HTML ----- */
+        /* ============================= */
 
-        proxyRes.send(result.html);
+        const pipelineResult = htmlPipeline(html, {
+          componentModuleId,
+          config,
+          includeComponentDiagnostics: !proxyReq.path.endsWith(".map"),
+          localCodeComponents,
+        });
+
+        assetMessage = pipelineResult.assetMessage;
+        componentMessage = pipelineResult.componentMessage;
+        componentDiagnosticMessage = pipelineResult.componentDiagnosticMessage;
+
+        /* ==================================== */
+        /* ----- 2. Sending modified HTML ----- */
+        /* ==================================== */
+
+        proxyRes.send(pipelineResult.html);
       } else {
         proxyRes.send(Buffer.from(webflowRes.data));
       }
@@ -136,6 +160,14 @@ function routeGetRequests(app: express.Express, config: PeakflowConfig): void {
 
       if (assetMessage) {
         logger.info(assetMessage);
+      }
+
+      if (componentMessage) {
+        logger.info(componentMessage);
+      }
+
+      if (componentDiagnosticMessage) {
+        logger.debug(componentDiagnosticMessage);
       }
     }
   });
@@ -255,8 +287,16 @@ function setupLivereload(
 export function startWebflowProxy(
   config: PeakflowConfig,
   reloadEmitter: events.EventEmitter,
+  componentModuleId?: string,
 ): void {
   const app = express();
+  let localCodeComponents: LocalCodeComponentLibrary | undefined;
+
+  try {
+    localCodeComponents = loadLocalCodeComponentLibrary(config);
+  } catch (err) {
+    logger.warn("Failed to load local Code Component library:", err);
+  }
 
   app.use(
     cors({
@@ -276,10 +316,20 @@ export function startWebflowProxy(
   app.use(express.json());
 
   setupLivereload(app, reloadEmitter, config);
-  routeGetRequests(app, config);
+  routeGetRequests(app, config, localCodeComponents, componentModuleId);
   routeWebflowAuthRequests(app, config);
 
   app.listen(config.devServer.port, () => {
+    if (localCodeComponents) {
+      logger.success(
+        "Local Code Component library",
+        logger.var(localCodeComponents.moduleId),
+        "with",
+        logger.num(localCodeComponents.componentIds.size),
+        pluralize("component", localCodeComponents.componentIds.size),
+      );
+    }
+
     logger.success(`Local server http://localhost:${config.devServer.port}`);
   });
 }
