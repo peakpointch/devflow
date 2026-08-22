@@ -1,4 +1,5 @@
 import chalk from "chalk";
+import { Webflow } from "webflow-api";
 
 import { parseConfigAction } from "../config/parse.js";
 import { getWebflowConfig } from "../webflow/config.js";
@@ -10,11 +11,11 @@ import {
   registerMissingScripts,
   publishEnvironment,
 } from "../webflow/api.js";
+import { Table } from "../helpers/table.js";
 import { logger } from "../helpers/taskLogger.js";
 import { errorToString } from "../helpers/utils.js";
-import { OptionDryRun, OptionJSON, OptionVerbose } from "../types/cli.js";
-import { Table } from "../helpers/table.js";
-import { Webflow } from "webflow-api";
+import { assetDataset } from "../helpers/dataset.js";
+import type { OptionDryRun, OptionJSON, OptionVerbose } from "../types/cli.js";
 
 export type CodePublishOptions = OptionDryRun & OptionJSON & OptionVerbose;
 
@@ -140,7 +141,7 @@ export async function codeListAction({ json, verbose }: CodeListOptions) {
       return (block.scripts ?? []).map((script) => ({
         path,
         script,
-        file: (script.attributes?.["data-peakflow-local"] as string) ?? "",
+        file: (script.attributes?.[assetDataset.attr.local] as string) ?? "",
       }));
     })
     .sort(

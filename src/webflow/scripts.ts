@@ -8,7 +8,8 @@ import {
   getFilePath,
   getModuleHash,
 } from "../config/modules.js";
-import { OptionDryRun } from "../types/cli.js";
+import { assetDataset } from "../helpers/dataset.js";
+import type { OptionDryRun } from "../types/cli.js";
 
 /**
  * Build a register request for each unique module
@@ -61,8 +62,8 @@ export async function generateUpsertScripts({
         location: mod.path.endsWith(".css") ? "header" : "footer",
         version: mod.version,
         attributes: {
-          "data-peakflow-hmr": "true",
-          "data-peakflow-local": getFilePath(mod.path),
+          [assetDataset.attr.hmr]: "true",
+          [assetDataset.attr.local]: getFilePath(mod.path),
         },
       };
     }),
