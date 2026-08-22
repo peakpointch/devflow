@@ -64,6 +64,16 @@ export function unionRegExp(patterns: RegExpArray, flags?: string): RegExp {
   return new RegExp(combinedPattern, flags);
 }
 
+// TODO: implement something like this in joinRegExp or just in general
+// inside htmlRewriter.ts. See docs/html-rewriter-limitations.md
+// function flagsOf(...regexes: (RegExp | undefined)[]): string {
+//   const flags = new Set<string>();
+//   for (const r of regexes) {
+//     if (r) for (const f of r.flags) flags.add(f);
+//   }
+//   return Array.from(flags).join("");
+// }
+
 /**
  * Escape `RegExp` characters in a string
  * @example ```typescript
