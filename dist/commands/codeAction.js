@@ -9,9 +9,10 @@ import {
   registerMissingScripts,
   publishEnvironment
 } from "../webflow/api.js";
+import { Table } from "../helpers/table.js";
 import { logger } from "../helpers/taskLogger.js";
 import { errorToString } from "../helpers/utils.js";
-import { Table } from "../helpers/table.js";
+import { assetDataset } from "../helpers/dataset.js";
 async function codePublishAction(options = {}) {
   logger.setScope("Publish");
   if (options.dryRun) {
@@ -97,7 +98,7 @@ async function codeListAction({ json, verbose }) {
     return (block.scripts ?? []).map((script) => ({
       path,
       script,
-      file: script.attributes?.["data-peakflow-local"] ?? ""
+      file: script.attributes?.[assetDataset.attr.local] ?? ""
     }));
   }).sort(
     (a, b) => a.script.id.localeCompare(b.script.id) || a.script.version.localeCompare(b.script.version) || a.path.localeCompare(b.path)

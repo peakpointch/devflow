@@ -1,5 +1,5 @@
 import { wf } from "peakflow/webflow";
-import { dataset } from "./dataset.js";
+import { styleSheetDataset } from "./dataset.js";
 import { routes } from "./routes.js";
 class Livereload {
   static instance;
@@ -25,10 +25,10 @@ class Livereload {
   reloadCss(host) {
     if (!wf.doc) return;
     const links = wf.doc.querySelectorAll(
-      `link[rel="stylesheet"][${dataset.attr.hmr}="true"]`
+      `link[rel="stylesheet"][${styleSheetDataset.attr.hmr}="true"]`
     );
     links.forEach((link) => {
-      const { local } = dataset.parse(link);
+      const { local } = styleSheetDataset.parse(link);
       const url = new URL(`${host}/${local}`);
       url.searchParams.set("peakflow-t", Date.now().toString());
       link.href = url.toString();

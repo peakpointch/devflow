@@ -8,6 +8,7 @@ import {
 const htmlr = {
   attribute: {
     nameStart: /(?<!\S)/,
+    leadingWhitespace: /\s+/,
     nameEnd: /(?=\s*=|\s|>|$)/,
     name: /(?<name>[^\s=\/>]+)/,
     assign: /\s*=\s*/,
@@ -15,7 +16,8 @@ const htmlr = {
      * - unquoted values are intentionally not supported (because it's stupid)
      * - multiple groups may be a problem, this needs testing
      */
-    value: /(?:(?<quote>")(?<value>[^"]*)"|(?<quote>')(?<value>[^']*)'|)/,
+    value: /(?:(?<quote>")(?<value>[^"]*?)"|(?<quote>')(?<value>[^']*?)')/,
+    // value: /(?:(?<quote>["'])(?<value>[^"']*?)\k<quote>)/,
     groups: {
       name: "name",
       value: "value",
@@ -32,12 +34,12 @@ const htmlr = {
   },
   tag: {
     openingStart: /</,
-    openingEnd: /\s*(?<selfClosing>\/?)>/,
+    openingEnd: /\s*(?<selfClosing>\/)?>/,
     closingStart: /<\//,
     closingEnd: /\s*>/,
-    name: /[a-z][\w:-]*\b/,
-    attributes: /(?<attributes>[^>]*)?/,
-    // This may consume self closing tags, this needs testing
+    name: /[a-z][\w:-]*/,
+    nameEnd: /(?=\s|>)/,
+    attributes: /(?<attributes>(?:(?!\s*\/?\s*>)[^>])*)?/,
     innerHtml: /[\s\S]*?/,
     emptyInnerHtml: /\s*/,
     groups: {
@@ -70,21 +72,23 @@ function createOpeningTagRegExp(tagName) {
   return joinRegExp(
     [
       htmlr.tag.openingStart,
-      groupRegExp(
-        [tagName ? escapeRegExp(tagName) + /\b/.source : htmlr.tag.name],
-        { name: htmlr.tag.groups.tagName }
-      ),
+      groupRegExp([tagName ? escapeRegExp(tagName) : htmlr.tag.name], {
+        name: htmlr.tag.groups.tagName
+      }),
+      htmlr.tag.nameEnd,
       htmlr.tag.attributes,
       htmlr.tag.openingEnd
     ],
     "gi"
   );
 }
-function createClosingTagRegExp(tagName) {
+function createClosingTagRegExp(tagName, captureTagName) {
+  const tagNamePattern = tagName ? strToRegExp(tagName) : htmlr.tag.name;
   return joinRegExp(
     [
       htmlr.tag.closingStart,
-      tagName ? strToRegExp(tagName) : htmlr.tag.name,
+      captureTagName === false ? tagNamePattern : groupRegExp(tagNamePattern, { name: htmlr.tag.groups.tagName }),
+      htmlr.tag.nameEnd,
       htmlr.tag.closingEnd
     ],
     "gi"
@@ -97,21 +101,40 @@ function createPairedElementRegExp(tagName, innerPattern) {
   const innerHtmlGroup = groupRegExp(innerPattern ?? htmlr.tag.emptyInnerHtml, {
     name: htmlr.tag.groups.innerHtml
   });
-  const closingGroup = groupRegExp(createClosingTagRegExp(tagName), {
+  const closingGroup = groupRegExp(createClosingTagRegExp(tagName, false), {
     name: htmlr.tag.groups.closingTag
   });
   return joinRegExp([openingGroup, innerHtmlGroup, closingGroup], "gi");
 }
 function createAttributeRegExp(name, value) {
+  const nameExpression = name ? groupRegExp([`(?i:${escapeRegExp(name)})`], {
+    name: htmlr.attribute.groups.name
+  }) : htmlr.attribute.name;
+  let valueExpression;
+  if (value === void 0) {
+    valueExpression = optionalRegExp([
+      htmlr.attribute.assign,
+      htmlr.attribute.value
+    ]);
+  } else {
+    const valueCapture = groupRegExp([escapeRegExp(value)], {
+      name: htmlr.attribute.groups.value
+    });
+    const quotedValueExpression = groupRegExp(
+      [`(?<quote>["'])`, valueCapture, `\\k<quote>`],
+      { nonCapturing: true }
+    );
+    valueExpression = joinRegExp([
+      htmlr.attribute.assign,
+      quotedValueExpression
+    ]);
+  }
   return joinRegExp(
     [
       htmlr.attribute.nameStart,
-      name ? `(?i:${escapeRegExp(name)})` : htmlr.attribute.name,
+      nameExpression,
       htmlr.attribute.nameEnd,
-      optionalRegExp([
-        htmlr.attribute.assign,
-        value !== void 0 ? escapeRegExp(value) : htmlr.attribute.value
-      ])
+      valueExpression
     ],
     "gv"
   );
@@ -151,7 +174,7 @@ function decodeHtmlAttribute(value) {
 function encodeHtmlAttribute(value, quote = '"') {
   return value.replace(htmlr.escape.ampersand, "&amp;").replace(htmlr.escape.lessThan, "&lt;").replace(htmlr.escape.greaterThan, "&gt;").replace(
     quote === '"' ? htmlr.escape.doubleQuote : htmlr.escape.singleQuote,
-    quote === '"' ? "&quot;" : "&#39;"
+    quote === '"' ? "&quot;" : "&apos;"
   );
 }
 function parseHtmlAttributes(source) {
@@ -160,11 +183,12 @@ function parseHtmlAttributes(source) {
   for (const match of source.matchAll(expression)) {
     const groups = match.groups;
     const name = groups?.name?.toLowerCase();
-    const encodedValue = groups?.value ?? "";
-    if (!name) {
+    const encodedValue = groups?.value;
+    if (!name || name in attributes) {
       continue;
     }
-    if (encodedValue === void 0 || encodedValue === "" || encodedValue === "true") {
+    if (encodedValue === void 0 || // WARNING: I removed "" from being interpreted as a boolean true
+    encodedValue === "true") {
       attributes[name] = true;
     } else if (encodedValue === "false") {
       attributes[name] = false;
@@ -174,10 +198,13 @@ function parseHtmlAttributes(source) {
   }
   return attributes;
 }
-function stringifyHtmlAttributes(attributes) {
-  return Object.entries(attributes).map(([name, value]) => {
-    return value === true ? name : `${name}="${encodeHtmlAttribute(String(value))}"`;
-  }).join(" ");
+function stringifyHtmlAttributes(attributes, options = {}) {
+  const parts = Object.entries(attributes).flatMap(([name, value]) => {
+    if (value === false && !options.includeFalseAttributes) return [];
+    if (value === true || value === false) return name;
+    return `${name}="${encodeHtmlAttribute(String(value))}"`;
+  });
+  return parts.length ? ` ${parts.join(" ")}` : "";
 }
 function stringifyHtmlElement({
   tagName,
@@ -185,12 +212,12 @@ function stringifyHtmlElement({
   innerHtml
 }) {
   const attrString = stringifyHtmlAttributes(attributes);
-  const openingTag = `<${tagName}${attrString ? ` ${attrString}` : ""}>`;
+  const openingTag = `<${tagName}${attrString}>`;
   const isVoidElement = htmlVoidTagNames.has(tagName.toLowerCase());
   if (isVoidElement && innerHtml !== void 0) {
     throw new Error(`Void HTML element <${tagName}> cannot have inner HTML.`);
   }
-  return isVoidElement ? openingTag : openingTag + (innerHtml ?? "") + "</" + tagName + ">";
+  return isVoidElement ? openingTag : openingTag + (innerHtml ?? "") + `</${tagName}>`;
 }
 function createHtmlElement(tagName, attributes = {}, innerHtml) {
   return stringifyHtmlElement({ tagName, attributes, innerHtml });
@@ -236,33 +263,49 @@ function findHtmlElements(html, tagName, paired = false) {
     };
   });
 }
-function setHtmlAttributes(openingTag, attributes) {
+function patchHtmlAttributes(openingTag, attributes) {
   let transformedOpeningTag = openingTag;
   for (const [attributeName, value] of Object.entries(attributes)) {
     const expression = createAttributeRegExp(attributeName);
+    const replacementExpression = joinRegExp(
+      [htmlr.attribute.leadingWhitespace, expression],
+      "gv"
+    );
     const stringifiedAttribute = stringifyHtmlAttributes({
       [attributeName]: value
     });
     if (transformedOpeningTag.match(expression)) {
       transformedOpeningTag = transformedOpeningTag.replace(
-        expression,
+        replacementExpression,
         stringifiedAttribute
       );
       continue;
     }
     transformedOpeningTag = transformedOpeningTag.replace(
       htmlr.tag.openingEnd,
-      (_tagEnd, ...captures) => {
-        const groups = captures[captures.length - 1];
-        const selfClosing = groups?.selfClosing ?? "";
-        return ` ${stringifiedAttribute}${selfClosing}>`;
-      }
+      (tagEnd) => stringifiedAttribute + tagEnd
     );
   }
   return transformedOpeningTag;
 }
+function setHtmlAttributes(openingTag, attributes) {
+  const expression = createOpeningTagRegExp();
+  const stringifiedAttributes = stringifyHtmlAttributes(attributes);
+  return openingTag.replace(
+    expression,
+    (matchedOpeningTag, ...captures) => {
+      const groups = captures[captures.length - 1];
+      const tagName = groups?.tagName;
+      if (!tagName) {
+        return matchedOpeningTag;
+      }
+      const tagEnd = groups.selfClosing ? " />" : ">";
+      return `<${tagName}${stringifiedAttributes}${tagEnd}`;
+    }
+  );
+}
 function setHtmlAttribute(openingTag, attributeName, value) {
-  return setHtmlAttributes(openingTag, { [attributeName]: value });
+  return patchHtmlAttributes(openingTag, { [attributeName]: value });
 }
 function getFirstHtmlAttribute(html, tagName, attributeName) {
   return findHtmlOpeningTags(html, tagName)[0]?.attributes[attributeName];
@@ -335,9 +378,9 @@ function removeHtmlFragments(html, fragments) {
 }
 function insertBeforeClosingHtmlTag(html, tagName, markup) {
   const expression = createClosingTagRegExp(tagName);
-  return html.replace(expression, markup + "</" + tagName + ">");
+  return html.replace(expression, (closingTag) => markup + closingTag);
 }
-function countHtmlAttributeOccurrences(html, attributeName) {
+function countHtmlElementsWithAttribute(html, attributeName) {
   const expression = createOpeningTagRegExp();
   const normalizedAttributeName = attributeName.toLowerCase();
   let count = 0;
@@ -355,6 +398,7 @@ function countHtmlAttributeOccurrencesOld(html, attributeName) {
     [
       htmlr.tag.openingStart,
       htmlr.tag.name,
+      htmlr.tag.nameEnd,
       optionalRegExp([htmlr.tag.attributes, htmlr.attribute.nameStart]),
       escapeRegExp(attributeName),
       htmlr.attribute.nameEnd
@@ -364,8 +408,8 @@ function countHtmlAttributeOccurrencesOld(html, attributeName) {
   return [...html.matchAll(expression)].length;
 }
 export {
-  countHtmlAttributeOccurrences,
   countHtmlAttributeOccurrencesOld,
+  countHtmlElementsWithAttribute,
   createAttributeRegExp,
   createClosingTagRegExp,
   createHtmlElement,
@@ -378,6 +422,7 @@ export {
   getFirstHtmlAttribute,
   insertBeforeClosingHtmlTag,
   parseHtmlAttributes,
+  patchHtmlAttributes,
   removeHtmlFragments,
   replaceEmptyHtmlElements,
   replaceHtmlOpeningTags,
