@@ -5,7 +5,6 @@ import {
   optionalRegExp,
   strToRegExp,
 } from "./regexp.js";
-import { isEmptyObject } from "./utils.js";
 
 export type HtmlAttributeValue = string | boolean;
 export type HtmlAttributeQuote = '"' | "'";
