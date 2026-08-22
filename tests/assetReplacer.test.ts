@@ -22,9 +22,20 @@ describe(replaceAssets.name, () => {
   test("replaces marked script and stylesheet URLs in place", () => {
     const html = [
       `<html><head>`,
-      `<script async ${assetDataset.attr.hmr}="true" ${assetDataset.attr.local}="scripts/app.js" src="https://cdn.example.com/app.js" integrity="script-hash">window.ready = true;</script>`,
+      `<script async `,
+      `${assetDataset.attr.hmr}="true" `,
+      `${assetDataset.attr.local}="scripts/app.js" `,
+      `src="https://cdn.example.com/app.js" `,
+      `${assetDataset.attr.integrity}="script-hash"`,
+      `>window.ready = true;</script>`,
       `<meta name="between">`,
-      `<link rel='StyleSheet' media='screen' ${assetDataset.attr.local}='styles/app.css' ${assetDataset.attr.hmr}='true' href='https://cdn.example.com/app.css' integrity='style-hash'>`,
+      `\n`,
+      `<link rel='StyleSheet' media='screen' `,
+      `${assetDataset.attr.local}='styles/app.css' `,
+      `${assetDataset.attr.hmr}='true' `,
+      `href='https://cdn.example.com/app.css' `,
+      `${assetDataset.attr.integrity}='style-hash'`,
+      `>`,
       `</head><body><main>Page</main></body></html>`,
     ].join("");
 
@@ -33,7 +44,7 @@ describe(replaceAssets.name, () => {
     expect(result.replacedCount).toBe(2);
     expect(result.html).toContain('src="/__app/scripts/app.js"');
     expect(result.html).toContain('href="/__app/styles/app.css"');
-    expect(result.html).not.toContain("integrity=");
+    expect(result.html).not.toContain(`${assetDataset.attr.integrity}=`);
     expect(result.html).toContain("<script async");
     expect(result.html).toContain("window.ready = true;</script>");
     expect(result.html).toContain("media='screen'");
