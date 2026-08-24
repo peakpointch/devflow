@@ -10,6 +10,7 @@ underlying problem belongs to the shared matching model. Discovery, counting,
 and replacement should continue to interpret the same source consistently.
 
 ## Limitations
+
 ### 1. Inner-pattern flags are not preserved
 
 `createPairedElementRegExp` compiles the combined opening tag, inner pattern,

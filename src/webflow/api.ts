@@ -38,11 +38,14 @@ export async function fetchCollections(client: WebflowClient, siteId: string) {
   return collections.collections ?? [];
 }
 
-export async function fetchCollectionDetails(client: WebflowClient, collectionId: string) {
+export async function fetchCollectionDetails(
+  client: WebflowClient,
+  collectionId: string,
+) {
   let collection: Webflow.Collection;
 
   try {
-    collection = await client.collections.get(collectionId)
+    collection = await client.collections.get(collectionId);
   } catch (err) {
     logger.error("Failed to fetch collection details:", errorToString(err));
     process.exit(1);
