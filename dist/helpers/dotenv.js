@@ -2,7 +2,12 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 import { mergeOptions } from "peakflow/utils";
-import { anchorRegExp, groupRegExp, strToRegExp, joinRegExp } from "./regexp.js";
+import {
+  anchorRegExp,
+  groupRegExp,
+  strToRegExp,
+  joinRegExp
+} from "./regexp.js";
 import { errorToString, isPlainObject } from "./utils.js";
 const dotenvDefaultOptions = {
   update: false,

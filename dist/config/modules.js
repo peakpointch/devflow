@@ -45,7 +45,9 @@ async function getModuleHash(repo, module) {
   if (cached) return cached;
   const res = await fetch(cdnUrl);
   if (!res.ok) {
-    throw new Error(`Failed to fetch ${cdnUrl}: ${res.status} ${res.statusText}`);
+    throw new Error(
+      `Failed to fetch ${cdnUrl}: ${res.status} ${res.statusText}`
+    );
   }
   const content = Buffer.from(await res.arrayBuffer());
   const hash = generateIntegrityHash(content);
