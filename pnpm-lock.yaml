@@ -47,6 +47,9 @@ importers:
       esbuild:
         specifier: ^0.28.2
         version: 0.28.2
+      esbuild-postcss:
+        specifier: ^0.0.4
+        version: 0.0.4(esbuild@0.28.2)(postcss@8.5.26)
       express:
         specifier: ^4.18.2
         version: 4.22.2
@@ -74,6 +77,9 @@ importers:
       picomatch:
         specifier: ^4.0.5
         version: 4.0.5
+      postcss:
+        specifier: ^8.5.8
+        version: 8.5.26
       string-width:
         specifier: ^8.2.2
         version: 8.2.2
@@ -117,15 +123,9 @@ importers:
       esbuild-plugin-vue3:
         specifier: ^0.5.1
         version: 0.5.1(vue@3.5.41(typescript@6.0.3))
-      esbuild-postcss:
-        specifier: ^0.0.4
-        version: 0.0.4(esbuild@0.28.2)(postcss@8.5.26)
       jest:
         specifier: ^30.4.2
         version: 30.4.2(@types/node@26.2.0)
-      postcss:
-        specifier: ^8.5.8
-        version: 8.5.26
       prettier:
         specifier: ^3.8.1
         version: 3.9.6
