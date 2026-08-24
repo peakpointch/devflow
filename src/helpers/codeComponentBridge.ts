@@ -154,10 +154,6 @@ function getClientManifestUrl(
 export function loadLocalCodeComponentLibrary(
   config: PeakflowConfig,
 ): LocalCodeComponentLibrary | undefined {
-  // TODO: Once we write our own compiler, these paths will change.
-  // If we want to support both modes, we need to implement a
-  // "search for library" functionality. Paths need to be easily
-  // configurable.
   const clientDirectory = path.resolve(config.build.outdir, "Client");
   const clientManifestPath = path.join(clientDirectory, "wf-manifest.json");
   const federationManifestPath = path.join(clientDirectory, "mf-manifest.json");
