@@ -4,12 +4,14 @@ import cors from "cors";
 import events from "events";
 import express from "express";
 import expressWs from "express-ws";
+import fs from "fs/promises";
 import path from "path";
 
 import {
   loadLocalCodeComponentLibrary,
   type LocalCodeComponentLibrary,
 } from "./helpers/codeComponentBridge.js";
+import { addCssImportCacheBuster } from "./helpers/cssPipeline.js";
 import { htmlPipeline as htmlPipeline } from "./helpers/htmlPipeline.js";
 import { routes } from "./helpers/routes.js";
 import { PeakflowConfig } from "peakflow/config";
@@ -60,6 +62,41 @@ function getRequestHeaders(baseUrl: string, proxyReq: express.Request) {
     Referer: `${baseUrl}${proxyReq.headers.referer?.replace(/^https?:\/\/[^/]+/, "") || "/"}`,
     "User-Agent": proxyReq.headers["user-agent"] || "",
   };
+}
+
+async function serveCacheBustedCss(
+  request: express.Request,
+  response: express.Response,
+  next: express.NextFunction,
+): Promise<void> {
+  const timestamp = request.query["peakflow-t"];
+
+  if (!request.path.endsWith(".css") || typeof timestamp !== "string") {
+    next();
+    return;
+  }
+
+  const root = process.cwd();
+  const filePath = path.resolve(root, `.${request.path}`);
+  const relativePath = path.relative(root, filePath);
+
+  if (relativePath.startsWith("..") || path.isAbsolute(relativePath)) {
+    next();
+    return;
+  }
+
+  try {
+    const css = await fs.readFile(filePath, "utf8");
+    response.setHeader("Cache-Control", "no-store");
+    response.type("css").send(addCssImportCacheBuster(css, timestamp));
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+      next();
+      return;
+    }
+
+    next(error);
+  }
 }
 
 /**
@@ -306,7 +343,17 @@ export function startWebflowProxy(
   );
 
   app.use(cookieParser());
-  app.use(routes.app, express.static(process.cwd()));
+  app.use(routes.app, serveCacheBustedCss);
+  app.use(
+    routes.app,
+    express.static(process.cwd(), {
+      etag: false,
+      lastModified: false,
+      setHeaders: (response) => {
+        response.setHeader("Cache-Control", "no-store");
+      },
+    }),
+  );
   app.use(
     routes.server,
     express.static(path.resolve(import.meta.dirname, "..")),
