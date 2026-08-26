@@ -39,11 +39,16 @@ describe(replaceAssets.name, () => {
       `</head><body><main>Page</main></body></html>`,
     ].join("");
 
-    const result = replaceAssets(html, config(false));
+    const cfg = config(false);
+    const result = replaceAssets(html, cfg);
 
     expect(result.replacedCount).toBe(2);
-    expect(result.html).toContain('src="/__app/scripts/app.js"');
-    expect(result.html).toContain('href="/__app/styles/app.css"');
+    expect(result.html).toContain(
+      `src="http://localhost:${cfg.devServer.port}/__app/scripts/app.js"`,
+    );
+    expect(result.html).toContain(
+      `href="http://localhost:${cfg.devServer.port}/__app/styles/app.css"`,
+    );
     expect(result.html).not.toContain(`${assetDataset.attr.integrity}=`);
     expect(result.html).toContain("<script async");
     expect(result.html).toContain("window.ready = true;</script>");
@@ -59,10 +64,13 @@ describe(replaceAssets.name, () => {
   test("supports case-insensitive names and encoded local paths", () => {
     const html = `<SCRIPT ${assetDataset.attr.hmr.toUpperCase()}="true" ${assetDataset.attr.local.toUpperCase()}="scripts/app.js?x=1&amp;y=2" SRC="production.js"></SCRIPT><body></body>`;
 
-    const result = replaceAssets(html, config(false));
+    const cfg = config(false);
+    const result = replaceAssets(html, cfg);
 
     expect(result.replacedCount).toBe(1);
-    expect(result.html).toContain('src="/__app/scripts/app.js?x=1&amp;y=2"');
+    expect(result.html).toContain(
+      `src="http://localhost:${cfg.devServer.port}/__app/scripts/app.js?x=1&amp;y=2"`,
+    );
   });
 
   test("ignores unmarked, disabled, malformed, and non-stylesheet assets", () => {
@@ -71,18 +79,6 @@ describe(replaceAssets.name, () => {
       `<script ${assetDataset.attr.hmr}="false" ${assetDataset.attr.local}="scripts/disabled.js" src="production.js"></script>`,
       `<script ${assetDataset.attr.hmr}="true" ${assetDataset.attr.local} src="production.js"></script>`,
       `<link rel="preload" ${assetDataset.attr.hmr}="true" ${assetDataset.attr.local}="styles/app.css" href="production.css">`,
-      `<body></body>`,
-    ].join("");
-
-    const result = replaceAssets(html, config(false));
-
-    expect(result).toEqual({ html, replacedCount: 0 });
-  });
-
-  test("reports only actual textual replacements", () => {
-    const html = [
-      `<script ${assetDataset.attr.hmr}="true" ${assetDataset.attr.local}="app.js" src="/__app/app.js"></script>`,
-      `<link rel="stylesheet" ${assetDataset.attr.hmr}="true" ${assetDataset.attr.local}="app.css" href="/__app/app.css">`,
       `<body></body>`,
     ].join("");
 

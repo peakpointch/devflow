@@ -11,21 +11,23 @@ function getLocalAssetPath(attributes) {
   const localPath = attributes[assetDataset.attr.local];
   return hmr === true && typeof localPath === "string" ? localPath : void 0;
 }
-function getLocalAssetUrl(localPath) {
-  return `${routes.app}/${localPath}`.replace(/\/+/g, "/");
+function getLocalAssetUrl(localPath, config) {
+  const origin = `http://localhost:${config.devServer.port}`;
+  const cleanPath = `/${routes.app}/${localPath}`.replace(/\/+/g, "/");
+  return `${origin}${cleanPath}`;
 }
-function replaceLocalScripts(html) {
+function replaceLocalScripts(html, config) {
   return replaceHtmlOpeningTags(html, "script", (script) => {
     const localPath = getLocalAssetPath(script.attributes);
     if (!localPath) return script.openingTag;
     return patchHtmlAttributes(script.openingTag, {
-      [scriptDataset.attr.src]: getLocalAssetUrl(localPath),
+      [scriptDataset.attr.src]: getLocalAssetUrl(localPath, config),
       [scriptDataset.attr.integrity]: false
       // Delete's the integrity attribute
     });
   });
 }
-function replaceLocalStylesheets(html) {
+function replaceLocalStylesheets(html, config) {
   return replaceHtmlOpeningTags(html, "link", (link) => {
     const localPath = getLocalAssetPath(link.attributes);
     const isStyleSheet = typeof link.attributes.rel === "string" && link.attributes.rel.toLowerCase() === "stylesheet";
@@ -33,7 +35,7 @@ function replaceLocalStylesheets(html) {
       return link.openingTag;
     }
     return patchHtmlAttributes(link.openingTag, {
-      [styleSheetDataset.attr.href]: getLocalAssetUrl(localPath),
+      [styleSheetDataset.attr.href]: getLocalAssetUrl(localPath, config),
       [styleSheetDataset.attr.integrity]: false
       // Delete's the integrity attribute
     });
@@ -57,8 +59,8 @@ function injectReloadScript(html, config) {
   return { html: newHtml, didInject: shouldInject };
 }
 function replaceAssets(html, config) {
-  const scriptResult = replaceLocalScripts(html);
-  const stylesResult = replaceLocalStylesheets(scriptResult.html);
+  const scriptResult = replaceLocalScripts(html, config);
+  const stylesResult = replaceLocalStylesheets(scriptResult.html, config);
   const reloadResult = injectReloadScript(stylesResult.html, config);
   return {
     html: reloadResult.html,
@@ -66,5 +68,6 @@ function replaceAssets(html, config) {
   };
 }
 export {
+  getLocalAssetUrl,
   replaceAssets
 };
