@@ -2,5 +2,8 @@ allowBuilds:
   core-js: true
   esbuild: true
   unrs-resolver: true
+minimumReleaseAgeExclude:
+  - elliptic@6.6.2
+  - qs@6.15.4
 overrides:
   peakflow-cli: "link:"
