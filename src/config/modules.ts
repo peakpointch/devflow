@@ -97,7 +97,9 @@ export async function getModuleHash(
   const res = await fetch(cdnUrl);
 
   if (!res.ok) {
-    throw new Error(`Failed to fetch ${cdnUrl}: ${res.status} ${res.statusText}`);
+    throw new Error(
+      `Failed to fetch ${cdnUrl}: ${res.status} ${res.statusText}`,
+    );
   }
 
   const content = Buffer.from(await res.arrayBuffer());

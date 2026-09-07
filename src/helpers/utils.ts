@@ -38,6 +38,13 @@ export function isPlainObject(val: unknown): val is PlainObject {
 }
 
 /**
+ * Checks if an object is empty.
+ */
+export function isEmptyObject(obj: unknown): boolean {
+  return !obj || Object.keys(obj).length === 0;
+}
+
+/**
  * Return the first valid key's value
  */
 function firstValidKeyValue<TObj extends object, TKey extends string>(

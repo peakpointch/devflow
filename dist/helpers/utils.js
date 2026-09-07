@@ -17,6 +17,9 @@ function parseNodeEnv(env) {
 function isPlainObject(val) {
   return typeof val === "object" && val !== null && Object.getPrototypeOf(val) === Object.prototype;
 }
+function isEmptyObject(obj) {
+  return !obj || Object.keys(obj).length === 0;
+}
 function firstValidKeyValue(obj, keys) {
   for (const key of keys) {
     if (key && key in obj) {
@@ -87,6 +90,7 @@ export {
   getErrorCode,
   getErrorMessage,
   getMaxWidth,
+  isEmptyObject,
   isNodeEnv,
   isPlainObject,
   leftPad,

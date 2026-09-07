@@ -3,9 +3,12 @@ import { describe, expect, test } from "@jest/globals";
 import {
   anchorRegExp,
   escapeRegExp,
+  groupRegExp,
   joinRegExp,
+  optionalRegExp,
   strToRegExp,
   globToRegExp,
+  unionRegExp,
 } from "../src/helpers/regexp.js";
 
 describe(anchorRegExp.name, () => {
@@ -29,6 +32,106 @@ describe(anchorRegExp.name, () => {
 
     expect(pattern.test("barfoo")).toBe(true);
     expect(pattern.test("foobar")).toBe(false);
+  });
+});
+
+describe(groupRegExp.name, () => {
+  test("creates a capturing group", () => {
+    const pattern = groupRegExp(/foo/);
+    const match = pattern.exec("foo");
+
+    expect(match?.[1]).toBe("foo");
+  });
+
+  test("joins multiple patterns inside the group", () => {
+    const pattern = groupRegExp([/foo/, "=", /bar/]);
+
+    expect(pattern.source).toBe("(foo=bar)");
+    expect(pattern.test("foo=bar")).toBe(true);
+  });
+
+  test("creates a named capturing group", () => {
+    const pattern = groupRegExp(/foo/, { name: "value" });
+    const match = pattern.exec("foo");
+
+    expect(match?.groups?.value).toBe("foo");
+  });
+
+  test("creates a non-capturing group", () => {
+    const pattern = groupRegExp(/foo/, { nonCapturing: true });
+    const match = pattern.exec("foo");
+
+    expect(pattern.source).toBe("(?:foo)");
+    expect(match).toHaveLength(1);
+  });
+
+  test("makes the group optional", () => {
+    const pattern = anchorRegExp(groupRegExp(/foo/, { optional: true }));
+
+    expect(pattern.test("")).toBe(true);
+    expect(pattern.test("foo")).toBe(true);
+    expect(pattern.test("bar")).toBe(false);
+  });
+
+  test("inherits flags and supports overriding them", () => {
+    expect(groupRegExp(/foo/i).flags).toContain("i");
+    expect(groupRegExp(/foo/i, { flags: "g" }).flags).toBe("g");
+  });
+});
+
+describe(optionalRegExp.name, () => {
+  test("makes a pattern optional without capturing it", () => {
+    const pattern = anchorRegExp(optionalRegExp(/foo/));
+    const match = pattern.exec("foo");
+
+    expect(pattern.test("")).toBe(true);
+    expect(match).toHaveLength(1);
+  });
+
+  test("joins multiple patterns into one optional group", () => {
+    const pattern = anchorRegExp(optionalRegExp([/foo/, "=", /bar/]));
+
+    expect(pattern.test("")).toBe(true);
+    expect(pattern.test("foo=bar")).toBe(true);
+    expect(pattern.test("foo=")).toBe(false);
+  });
+
+  test("inherits flags and supports overriding them", () => {
+    expect(optionalRegExp(/foo/i).flags).toContain("i");
+    expect(optionalRegExp(/foo/i, "g").flags).toBe("g");
+  });
+});
+
+describe(unionRegExp.name, () => {
+  test("combines regular expressions as alternatives", () => {
+    const pattern = anchorRegExp(unionRegExp([/foo/, /bar/]));
+
+    expect(pattern.test("foo")).toBe(true);
+    expect(pattern.test("bar")).toBe(true);
+    expect(pattern.test("baz")).toBe(false);
+  });
+
+  test("treats string alternatives literally", () => {
+    const pattern = anchorRegExp(unionRegExp(["foo.bar", "baz+"]));
+
+    expect(pattern.test("foo.bar")).toBe(true);
+    expect(pattern.test("fooXbar")).toBe(false);
+    expect(pattern.test("baz+")).toBe(true);
+  });
+
+  test("ignores empty string alternatives", () => {
+    const pattern = anchorRegExp(unionRegExp(["", /foo/]));
+
+    expect(pattern.test("foo")).toBe(true);
+    expect(pattern.test("")).toBe(false);
+  });
+
+  test("applies flags", () => {
+    const pattern = unionRegExp([/foo/, "bar"], "i");
+
+    expect(pattern.test("FOO")).toBe(true);
+    expect(pattern.test("BAR")).toBe(true);
+    expect(pattern.flags).toContain("i");
   });
 });
 

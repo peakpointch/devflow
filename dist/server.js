@@ -3,8 +3,13 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
 import expressWs from "express-ws";
+import fs from "fs/promises";
 import path from "path";
-import { replaceAssets } from "./helpers/assetReplacer.js";
+import {
+  loadLocalCodeComponentLibrary
+} from "./helpers/codeComponentBridge.js";
+import { addCssImportCacheBuster } from "./helpers/cssPipeline.js";
+import { htmlPipeline } from "./helpers/htmlPipeline.js";
 import { routes } from "./helpers/routes.js";
 import { devLogger as logger } from "./helpers/taskLogger.js";
 import { serverLogger } from "./helpers/httpLogger.js";
@@ -34,6 +39,31 @@ function getRequestHeaders(baseUrl, proxyReq) {
     "User-Agent": proxyReq.headers["user-agent"] || ""
   };
 }
+async function serveCacheBustedCss(request, response, next) {
+  const timestamp = request.query["peakflow-t"];
+  if (!request.path.endsWith(".css") || typeof timestamp !== "string") {
+    next();
+    return;
+  }
+  const root = process.cwd();
+  const filePath = path.resolve(root, `.${request.path}`);
+  const relativePath = path.relative(root, filePath);
+  if (relativePath.startsWith("..") || path.isAbsolute(relativePath)) {
+    next();
+    return;
+  }
+  try {
+    const css = await fs.readFile(filePath, "utf8");
+    response.setHeader("Cache-Control", "no-store");
+    response.type("css").send(addCssImportCacheBuster(css, timestamp));
+  } catch (error) {
+    if (error.code === "ENOENT") {
+      next();
+      return;
+    }
+    next(error);
+  }
+}
 async function requestWebflowGET(config, proxyReq) {
   const baseUrl = getWebflowBaseUrl(config.devServer.webflowSubdomain);
   return await axios.get(`${baseUrl}${proxyReq.url}`, {
@@ -47,10 +77,12 @@ async function requestWebflowGET(config, proxyReq) {
     responseType: "arraybuffer"
   });
 }
-function routeGetRequests(app, config) {
+function routeGetRequests(app, config, localCodeComponents, componentModuleId) {
   app.get("*", async (proxyReq, proxyRes) => {
     const performanceStart = performance.now();
     let assetMessage = "";
+    let componentMessage = "";
+    let componentDiagnosticMessage = "";
     try {
       if (proxyReq.url.includes("devtools")) {
         proxyRes.sendStatus(204);
@@ -63,12 +95,16 @@ function routeGetRequests(app, config) {
       const responseIsHtml = contentType.includes("text/html");
       if (responseIsHtml) {
         const html = Buffer.from(webflowRes.data).toString("utf8");
-        const result = replaceAssets(html, config);
-        assetMessage = `Replaced ${logger.num(result.removedCount)} ${pluralize(
-          "asset",
-          result.removedCount
-        )}`;
-        proxyRes.send(result.html);
+        const pipelineResult = htmlPipeline(html, {
+          componentModuleId,
+          config,
+          includeComponentDiagnostics: !proxyReq.path.endsWith(".map"),
+          localCodeComponents
+        });
+        assetMessage = pipelineResult.assetMessage;
+        componentMessage = pipelineResult.componentMessage;
+        componentDiagnosticMessage = pipelineResult.componentDiagnosticMessage;
+        proxyRes.send(pipelineResult.html);
       } else {
         proxyRes.send(Buffer.from(webflowRes.data));
       }
@@ -87,6 +123,12 @@ ${err?.response?.data}`
       });
       if (assetMessage) {
         logger.info(assetMessage);
+      }
+      if (componentMessage) {
+        logger.info(componentMessage);
+      }
+      if (componentDiagnosticMessage) {
+        logger.debug(componentDiagnosticMessage);
       }
     }
   });
@@ -158,8 +200,14 @@ function setupLivereload(app, reloadEmitter, config) {
     );
   });
 }
-function startWebflowProxy(config, reloadEmitter) {
+function startWebflowProxy(config, reloadEmitter, componentModuleId) {
   const app = express();
+  let localCodeComponents;
+  try {
+    localCodeComponents = loadLocalCodeComponentLibrary(config);
+  } catch (err) {
+    logger.warn("Failed to load local Code Component library:", err);
+  }
   app.use(
     cors({
       credentials: true,
@@ -167,7 +215,17 @@ function startWebflowProxy(config, reloadEmitter) {
     })
   );
   app.use(cookieParser());
-  app.use(routes.app, express.static(process.cwd()));
+  app.use(routes.app, serveCacheBustedCss);
+  app.use(
+    routes.app,
+    express.static(process.cwd(), {
+      etag: false,
+      lastModified: false,
+      setHeaders: (response) => {
+        response.setHeader("Cache-Control", "no-store");
+      }
+    })
+  );
   app.use(
     routes.server,
     express.static(path.resolve(import.meta.dirname, ".."))
@@ -175,9 +233,18 @@ function startWebflowProxy(config, reloadEmitter) {
   app.use(express.urlencoded({ extended: true }));
   app.use(express.json());
   setupLivereload(app, reloadEmitter, config);
-  routeGetRequests(app, config);
+  routeGetRequests(app, config, localCodeComponents, componentModuleId);
   routeWebflowAuthRequests(app, config);
   app.listen(config.devServer.port, () => {
+    if (localCodeComponents) {
+      logger.success(
+        "Local Code Component library",
+        logger.var(localCodeComponents.moduleId),
+        "with",
+        logger.num(localCodeComponents.componentIds.size),
+        pluralize("component", localCodeComponents.componentIds.size)
+      );
+    }
     logger.success(`Local server http://localhost:${config.devServer.port}`);
   });
 }

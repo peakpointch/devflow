@@ -25,7 +25,10 @@ const code = program.command("code").description("Manage Webflow custom code");
 program.name("peakflow").description("Manage your Webflow custom code projects.").version("0.1.0");
 program.command("init").description("Create a new project from the official template").argument("<project-name>", "Name of the project folder").action(initAction);
 program.command("config").description("Create a peakflow.config.ts file").action(configAction);
-program.command("dev").description("Start the development server").action(devAction);
+program.command("dev").description("Start the development server").option(
+  "--component-module-id <id>",
+  "Published Webflow Code Component module ID"
+).action(devAction);
 program.command("build").description("Build the production bundle").action(buildAction);
 auth.command("login").description("Log in and store credentials").action(authLoginAction);
 auth.command("logout").description("Log out and remove stored credentials").action(authLogoutAction);

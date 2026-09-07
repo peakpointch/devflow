@@ -5,6 +5,7 @@ import {
   getFilePath,
   getModuleHash
 } from "../config/modules.js";
+import { assetDataset } from "../helpers/dataset.js";
 async function generateRegisterScripts(modules, repo) {
   return Promise.all(
     modules.map(async (mod) => {
@@ -38,8 +39,8 @@ async function generateUpsertScripts({
         location: mod.path.endsWith(".css") ? "header" : "footer",
         version: mod.version,
         attributes: {
-          "data-peakflow-hmr": "true",
-          "data-peakflow-local": getFilePath(mod.path)
+          [assetDataset.attr.hmr]: "true",
+          [assetDataset.attr.local]: getFilePath(mod.path)
         }
       };
     })
