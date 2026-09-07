@@ -27,9 +27,11 @@
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
     "@types/degit": "^2.8.6",
-    "@types/express": "^4.17.25",
+    "@types/express": "^5.0.6",
+    "@types/express-ws": "^3.0.6",
     "@types/fs-extra": "^11.0.4",
     "@types/jest": "^30.0.0",
+    "@types/node": "^26.4.1",
     "@types/picomatch": "^4.0.3",
     "esbuild-plugin-vue3": "^0.5.1",
     "jest": "^30.4.2",
@@ -42,8 +44,6 @@
     "vue-tsc": "^3.3.9"
   },
   "dependencies": {
-    "@types/express-ws": "^3.0.6",
-    "@types/node": "^26.2.0",
     "axios": "^1.19.0",
     "better-auth": "^1.6.26",
     "chalk": "^5.6.2",

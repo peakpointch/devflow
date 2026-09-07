@@ -129,7 +129,7 @@ function routeGetRequests(
   localCodeComponents: LocalCodeComponentLibrary | undefined,
   componentModuleId?: string,
 ): void {
-  app.get("*", async (proxyReq, proxyRes) => {
+  app.get(/.*/, async (proxyReq, proxyRes) => {
     const performanceStart = performance.now();
     let assetMessage = "";
     let componentMessage = "";

@@ -78,7 +78,7 @@ async function requestWebflowGET(config, proxyReq) {
   });
 }
 function routeGetRequests(app, config, localCodeComponents, componentModuleId) {
-  app.get("*", async (proxyReq, proxyRes) => {
+  app.get(/.*/, async (proxyReq, proxyRes) => {
     const performanceStart = performance.now();
     let assetMessage = "";
     let componentMessage = "";
