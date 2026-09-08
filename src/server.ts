@@ -12,6 +12,7 @@ import {
   type LocalCodeComponentLibrary,
 } from "./helpers/codeComponentBridge.js";
 import { addCssImportCacheBuster } from "./helpers/cssPipeline.js";
+import type { DevUrlOptions } from "./helpers/devUrl.js";
 import { htmlPipeline as htmlPipeline } from "./helpers/htmlPipeline.js";
 import { routes } from "./helpers/routes.js";
 import { PeakflowConfig } from "peakflow/config";
@@ -128,6 +129,7 @@ function routeGetRequests(
   config: PeakflowConfig,
   localCodeComponents: LocalCodeComponentLibrary | undefined,
   componentModuleId?: string,
+  relativeUrls = false,
 ): void {
   app.get(/.*/, async (proxyReq, proxyRes) => {
     const performanceStart = performance.now();
@@ -165,6 +167,7 @@ function routeGetRequests(
           config,
           includeComponentDiagnostics: !proxyReq.path.endsWith(".map"),
           localCodeComponents,
+          relativeUrls,
         });
 
         assetMessage = pipelineResult.assetMessage;
@@ -318,13 +321,17 @@ function setupLivereload(
   });
 }
 
+export interface WebflowProxyOptions extends DevUrlOptions {
+  componentModuleId?: string | undefined;
+}
+
 /**
  * Start the Webflow proxy server for local development
  */
 export function startWebflowProxy(
   config: PeakflowConfig,
   reloadEmitter: events.EventEmitter,
-  componentModuleId?: string,
+  { componentModuleId, relativeUrls = false }: WebflowProxyOptions = {},
 ): void {
   const app = express();
   let localCodeComponents: LocalCodeComponentLibrary | undefined;
@@ -363,7 +370,13 @@ export function startWebflowProxy(
   app.use(express.json());
 
   setupLivereload(app, reloadEmitter, config);
-  routeGetRequests(app, config, localCodeComponents, componentModuleId);
+  routeGetRequests(
+    app,
+    config,
+    localCodeComponents,
+    componentModuleId,
+    relativeUrls,
+  );
   routeWebflowAuthRequests(app, config);
 
   app.listen(config.devServer.port, () => {

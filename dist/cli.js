@@ -28,6 +28,9 @@ program.command("config").description("Create a peakflow.config.ts file").action
 program.command("dev").description("Start the development server").option(
   "--component-module-id <id>",
   "Published Webflow Code Component module ID"
+).option(
+  "--relative-urls",
+  "Use root-relative URLs for local development assets"
 ).action(devAction);
 program.command("build").description("Build the production bundle").action(buildAction);
 auth.command("login").description("Log in and store credentials").action(authLoginAction);

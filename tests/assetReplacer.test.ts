@@ -73,6 +73,20 @@ describe(replaceAssets.name, () => {
     );
   });
 
+  test("uses root-relative script and stylesheet URLs when enabled", () => {
+    const html = [
+      `<script ${assetDataset.attr.hmr}="true" ${assetDataset.attr.local}="scripts/app.js" src="production.js"></script>`,
+      `<link rel="stylesheet" ${assetDataset.attr.hmr}="true" ${assetDataset.attr.local}="styles/app.css" href="production.css">`,
+    ].join("");
+
+    const result = replaceAssets(html, config(false), {
+      relativeUrls: true,
+    });
+
+    expect(result.html).toContain(`src="/__app/scripts/app.js"`);
+    expect(result.html).toContain(`href="/__app/styles/app.css"`);
+  });
+
   test("ignores unmarked, disabled, malformed, and non-stylesheet assets", () => {
     const html = [
       `<script ${assetDataset.attr.local}="scripts/unmarked.js" src="production.js"></script>`,

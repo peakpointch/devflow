@@ -7,11 +7,12 @@ import {
   replaceCodeComponents,
 } from "./codeComponentBridge.js";
 import { placeholderDataset } from "./dataset.js";
+import type { DevUrlOptions } from "./devUrl.js";
 import { countHtmlElementsWithAttribute } from "./htmlRewriter.js";
 import { devLogger as logger } from "./taskLogger.js";
 import { pluralize } from "./utils.js";
 
-export interface HtmlPipelineOptions {
+export interface HtmlPipelineOptions extends DevUrlOptions {
   componentModuleId: string | undefined;
   config: PeakflowConfig;
   includeComponentDiagnostics: boolean;
@@ -32,6 +33,7 @@ export function htmlPipeline(
     config,
     includeComponentDiagnostics,
     localCodeComponents,
+    relativeUrls = false,
   }: HtmlPipelineOptions,
 ): HtmlPipelineResult {
   /* ========================== */
@@ -39,7 +41,7 @@ export function htmlPipeline(
   /* ========================== */
 
   // 1. Replacing asset URLs
-  const assetResult = replaceAssets(html, config);
+  const assetResult = replaceAssets(html, config, { relativeUrls });
 
   // 2. Replacing react components
   const componentResult = localCodeComponents

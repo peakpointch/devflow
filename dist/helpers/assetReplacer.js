@@ -1,4 +1,5 @@
 import { assetDataset, styleSheetDataset, scriptDataset } from "./dataset.js";
+import { getDevServerUrl } from "./devUrl.js";
 import {
   insertBeforeClosingHtmlTag,
   patchHtmlAttributes,
@@ -11,23 +12,22 @@ function getLocalAssetPath(attributes) {
   const localPath = attributes[assetDataset.attr.local];
   return hmr === true && typeof localPath === "string" ? localPath : void 0;
 }
-function getLocalAssetUrl(localPath, config) {
-  const origin = `http://localhost:${config.devServer.port}`;
+function getLocalAssetUrl(localPath, config, options) {
   const cleanPath = `/${routes.app}/${localPath}`.replace(/\/+/g, "/");
-  return `${origin}${cleanPath}`;
+  return getDevServerUrl(config, cleanPath, options);
 }
-function replaceLocalScripts(html, config) {
+function replaceLocalScripts(html, config, options) {
   return replaceHtmlOpeningTags(html, "script", (script) => {
     const localPath = getLocalAssetPath(script.attributes);
     if (!localPath) return script.openingTag;
     return patchHtmlAttributes(script.openingTag, {
-      [scriptDataset.attr.src]: getLocalAssetUrl(localPath, config),
+      [scriptDataset.attr.src]: getLocalAssetUrl(localPath, config, options),
       [scriptDataset.attr.integrity]: false
       // Delete's the integrity attribute
     });
   });
 }
-function replaceLocalStylesheets(html, config) {
+function replaceLocalStylesheets(html, config, options) {
   return replaceHtmlOpeningTags(html, "link", (link) => {
     const localPath = getLocalAssetPath(link.attributes);
     const isStyleSheet = typeof link.attributes.rel === "string" && link.attributes.rel.toLowerCase() === "stylesheet";
@@ -35,7 +35,11 @@ function replaceLocalStylesheets(html, config) {
       return link.openingTag;
     }
     return patchHtmlAttributes(link.openingTag, {
-      [styleSheetDataset.attr.href]: getLocalAssetUrl(localPath, config),
+      [styleSheetDataset.attr.href]: getLocalAssetUrl(
+        localPath,
+        config,
+        options
+      ),
       [styleSheetDataset.attr.integrity]: false
       // Delete's the integrity attribute
     });
@@ -58,9 +62,13 @@ function injectReloadScript(html, config) {
 `) : html;
   return { html: newHtml, didInject: shouldInject };
 }
-function replaceAssets(html, config) {
-  const scriptResult = replaceLocalScripts(html, config);
-  const stylesResult = replaceLocalStylesheets(scriptResult.html, config);
+function replaceAssets(html, config, options) {
+  const scriptResult = replaceLocalScripts(html, config, options);
+  const stylesResult = replaceLocalStylesheets(
+    scriptResult.html,
+    config,
+    options
+  );
   const reloadResult = injectReloadScript(stylesResult.html, config);
   return {
     html: reloadResult.html,

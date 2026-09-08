@@ -17,6 +17,7 @@ import { startWebflowProxy } from "../server.js";
  */
 export interface DevOptions {
   componentModuleId?: string;
+  relativeUrls?: boolean;
 }
 
 function logCodeComponentBuild(buildResult: CodeComponentBuildResult): void {
@@ -48,7 +49,10 @@ function getAdditionalWatchFiles(
   );
 }
 
-export async function devAction({ componentModuleId }: DevOptions = {}) {
+export async function devAction({
+  componentModuleId,
+  relativeUrls = false,
+}: DevOptions = {}) {
   const config = await parseConfigAction();
   const reloadEmitter = new events.EventEmitter();
 
@@ -65,7 +69,10 @@ export async function devAction({ componentModuleId }: DevOptions = {}) {
   }
 
   // Start webflow proxy server, mirroring the .webflow.io staging domain
-  startWebflowProxy(config, reloadEmitter, componentModuleId);
+  startWebflowProxy(config, reloadEmitter, {
+    componentModuleId,
+    relativeUrls,
+  });
   reloadEmitter.emit("script-change", config.build.modules);
 
   // Watch for changes

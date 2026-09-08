@@ -1,6 +1,7 @@
 import type { PeakflowConfig } from "peakflow/config";
 
 import { assetDataset, styleSheetDataset, scriptDataset } from "./dataset.js";
+import { type DevUrlOptions, getDevServerUrl } from "./devUrl.js";
 import {
   type HtmlAttributes,
   insertBeforeClosingHtmlTag,
@@ -17,26 +18,37 @@ function getLocalAssetPath(attributes: HtmlAttributes): string | undefined {
   return hmr === true && typeof localPath === "string" ? localPath : undefined;
 }
 
-export function getLocalAssetUrl(localPath: string, config: PeakflowConfig): string {
-  const origin = `http://localhost:${config.devServer.port}`;
+export function getLocalAssetUrl(
+  localPath: string,
+  config: PeakflowConfig,
+  options?: DevUrlOptions,
+): string {
   const cleanPath = `/${routes.app}/${localPath}`.replace(/\/+/g, "/");
-  return `${origin}${cleanPath}`;
+  return getDevServerUrl(config, cleanPath, options);
 }
 
-function replaceLocalScripts(html: string, config: PeakflowConfig) {
+function replaceLocalScripts(
+  html: string,
+  config: PeakflowConfig,
+  options?: DevUrlOptions,
+) {
   return replaceHtmlOpeningTags(html, "script", (script) => {
     const localPath = getLocalAssetPath(script.attributes);
 
     if (!localPath) return script.openingTag;
 
     return patchHtmlAttributes(script.openingTag, {
-      [scriptDataset.attr.src]: getLocalAssetUrl(localPath, config),
+      [scriptDataset.attr.src]: getLocalAssetUrl(localPath, config, options),
       [scriptDataset.attr.integrity]: false, // Delete's the integrity attribute
     });
   });
 }
 
-function replaceLocalStylesheets(html: string, config: PeakflowConfig) {
+function replaceLocalStylesheets(
+  html: string,
+  config: PeakflowConfig,
+  options?: DevUrlOptions,
+) {
   return replaceHtmlOpeningTags(html, "link", (link) => {
     const localPath = getLocalAssetPath(link.attributes);
     const isStyleSheet =
@@ -48,7 +60,11 @@ function replaceLocalStylesheets(html: string, config: PeakflowConfig) {
     }
 
     return patchHtmlAttributes(link.openingTag, {
-      [styleSheetDataset.attr.href]: getLocalAssetUrl(localPath, config),
+      [styleSheetDataset.attr.href]: getLocalAssetUrl(
+        localPath,
+        config,
+        options,
+      ),
       [styleSheetDataset.attr.integrity]: false, // Delete's the integrity attribute
     });
   });
@@ -79,9 +95,17 @@ function injectReloadScript(html: string, config: PeakflowConfig) {
   return { html: newHtml, didInject: shouldInject };
 }
 
-export function replaceAssets(html: string, config: PeakflowConfig) {
-  const scriptResult = replaceLocalScripts(html, config);
-  const stylesResult = replaceLocalStylesheets(scriptResult.html, config);
+export function replaceAssets(
+  html: string,
+  config: PeakflowConfig,
+  options?: DevUrlOptions,
+) {
+  const scriptResult = replaceLocalScripts(html, config, options);
+  const stylesResult = replaceLocalStylesheets(
+    scriptResult.html,
+    config,
+    options,
+  );
   const reloadResult = injectReloadScript(stylesResult.html, config);
 
   return {

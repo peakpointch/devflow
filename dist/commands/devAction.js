@@ -29,7 +29,10 @@ function getAdditionalWatchFiles(watchList, inputFiles) {
     })
   );
 }
-async function devAction({ componentModuleId } = {}) {
+async function devAction({
+  componentModuleId,
+  relativeUrls = false
+} = {}) {
   const config = await parseConfigAction();
   const reloadEmitter = new events.EventEmitter();
   logger.info("Read the docs at https://github.com/peakpointch/peakflow-cli");
@@ -39,7 +42,10 @@ async function devAction({ componentModuleId } = {}) {
   if (codeComponentBuild) {
     logCodeComponentBuild(codeComponentBuild);
   }
-  startWebflowProxy(config, reloadEmitter, componentModuleId);
+  startWebflowProxy(config, reloadEmitter, {
+    componentModuleId,
+    relativeUrls
+  });
   reloadEmitter.emit("script-change", config.build.modules);
   const watcher = chokidar.watch(config.devServer.watchList, {
     ignoreInitial: true

@@ -11,9 +11,10 @@ function htmlPipeline(html, {
   componentModuleId,
   config,
   includeComponentDiagnostics,
-  localCodeComponents
+  localCodeComponents,
+  relativeUrls = false
 }) {
-  const assetResult = replaceAssets(html, config);
+  const assetResult = replaceAssets(html, config, { relativeUrls });
   const componentResult = localCodeComponents ? replaceCodeComponents(
     assetResult.html,
     localCodeComponents,

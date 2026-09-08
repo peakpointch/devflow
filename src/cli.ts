@@ -51,6 +51,10 @@ program
     "--component-module-id <id>",
     "Published Webflow Code Component module ID",
   )
+  .option(
+    "--relative-urls",
+    "Use root-relative URLs for local development assets",
+  )
   .action(devAction);
 
 program

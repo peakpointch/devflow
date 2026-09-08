@@ -77,7 +77,7 @@ async function requestWebflowGET(config, proxyReq) {
     responseType: "arraybuffer"
   });
 }
-function routeGetRequests(app, config, localCodeComponents, componentModuleId) {
+function routeGetRequests(app, config, localCodeComponents, componentModuleId, relativeUrls = false) {
   app.get(/.*/, async (proxyReq, proxyRes) => {
     const performanceStart = performance.now();
     let assetMessage = "";
@@ -99,7 +99,8 @@ function routeGetRequests(app, config, localCodeComponents, componentModuleId) {
           componentModuleId,
           config,
           includeComponentDiagnostics: !proxyReq.path.endsWith(".map"),
-          localCodeComponents
+          localCodeComponents,
+          relativeUrls
         });
         assetMessage = pipelineResult.assetMessage;
         componentMessage = pipelineResult.componentMessage;
@@ -200,7 +201,7 @@ function setupLivereload(app, reloadEmitter, config) {
     );
   });
 }
-function startWebflowProxy(config, reloadEmitter, componentModuleId) {
+function startWebflowProxy(config, reloadEmitter, { componentModuleId, relativeUrls = false } = {}) {
   const app = express();
   let localCodeComponents;
   try {
@@ -233,7 +234,13 @@ function startWebflowProxy(config, reloadEmitter, componentModuleId) {
   app.use(express.urlencoded({ extended: true }));
   app.use(express.json());
   setupLivereload(app, reloadEmitter, config);
-  routeGetRequests(app, config, localCodeComponents, componentModuleId);
+  routeGetRequests(
+    app,
+    config,
+    localCodeComponents,
+    componentModuleId,
+    relativeUrls
+  );
   routeWebflowAuthRequests(app, config);
   app.listen(config.devServer.port, () => {
     if (localCodeComponents) {
