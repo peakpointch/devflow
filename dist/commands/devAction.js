@@ -9,6 +9,9 @@ import {
   isCodeComponentBuildInput
 } from "../buildCodeComponents.js";
 import { startWebflowProxy } from "../server.js";
+import {
+  resolveDevUrlMode
+} from "../helpers/devUrl.js";
 function logCodeComponentBuild(buildResult) {
   logger.success(
     "Compiled",
@@ -29,13 +32,11 @@ function getAdditionalWatchFiles(watchList, inputFiles) {
     })
   );
 }
-async function devAction({
-  componentModuleId,
-  relativeUrls = false
-} = {}) {
+async function devAction(options = {}) {
+  const { componentModuleId } = options;
+  const devUrlMode = resolveDevUrlMode(options);
   const config = await parseConfigAction();
   const reloadEmitter = new events.EventEmitter();
-  const devUrlMode = relativeUrls ? { type: "relative" } : { type: "localhost" };
   logger.info("Read the docs at https://github.com/peakpointch/peakflow-cli");
   await buildDev(config);
   const codeComponentBuilder = await createCodeComponentBuilder(config, {

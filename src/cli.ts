@@ -1,6 +1,6 @@
 #! /usr/bin/env node
 
-import { Command } from "commander";
+import { Command, InvalidArgumentError, Option } from "commander";
 
 import { initialize } from "./helpers/initialize.js";
 import { initAction } from "./commands/initAction.js";
@@ -19,6 +19,7 @@ import {
   codePublishAction,
   codeUnpublishAction,
 } from "./commands/codeAction.js";
+import { normalizeDevBaseUrl } from "./helpers/devUrl.js";
 
 initialize();
 
@@ -54,6 +55,20 @@ program
   .option(
     "--relative-urls",
     "Use root-relative URLs for local development assets",
+  )
+  .addOption(
+    new Option(
+      "--base-url <url>",
+      "Use an HTTP(S) origin for local development assets",
+    )
+      .argParser((baseUrl) => {
+        try {
+          return normalizeDevBaseUrl(baseUrl);
+        } catch {
+          throw new InvalidArgumentError("must be an absolute HTTP(S) origin");
+        }
+      })
+      .conflicts("relativeUrls"),
   )
   .action(devAction);
 

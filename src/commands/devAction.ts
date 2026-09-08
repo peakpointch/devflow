@@ -11,14 +11,16 @@ import {
   type CodeComponentBuildResult,
 } from "../buildCodeComponents.js";
 import { startWebflowProxy } from "../server.js";
-import type { DevUrlMode } from "../helpers/devUrl.js";
+import {
+  type DevUrlInputOptions,
+  resolveDevUrlMode,
+} from "../helpers/devUrl.js";
 
 /**
  * Start the dev server (with livereload)
  */
-export interface DevOptions {
+export interface DevOptions extends DevUrlInputOptions {
   componentModuleId?: string;
-  relativeUrls?: boolean;
 }
 
 function logCodeComponentBuild(buildResult: CodeComponentBuildResult): void {
@@ -50,15 +52,11 @@ function getAdditionalWatchFiles(
   );
 }
 
-export async function devAction({
-  componentModuleId,
-  relativeUrls = false,
-}: DevOptions = {}) {
+export async function devAction(options: DevOptions = {}) {
+  const { componentModuleId } = options;
+  const devUrlMode = resolveDevUrlMode(options);
   const config = await parseConfigAction();
   const reloadEmitter = new events.EventEmitter();
-  const devUrlMode: DevUrlMode = relativeUrls
-    ? { type: "relative" }
-    : { type: "localhost" };
 
   logger.info("Read the docs at https://github.com/peakpointch/peakflow-cli");
 

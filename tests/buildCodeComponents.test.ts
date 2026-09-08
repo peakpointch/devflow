@@ -27,4 +27,18 @@ describe(getPublicPath.name, () => {
       "http://localhost:4000/__app/dist/Client/",
     );
   });
+
+  test("uses an explicit base URL", () => {
+    const projectDirectory = path.resolve("project");
+    const clientDirectory = path.join(projectDirectory, "dist", "Client");
+
+    expect(
+      getPublicPath(config, projectDirectory, clientDirectory, {
+        devUrlMode: {
+          baseUrl: "https://preview.example.com:8443",
+          type: "base",
+        },
+      }),
+    ).toBe("https://preview.example.com:8443/__app/dist/Client/");
+  });
 });

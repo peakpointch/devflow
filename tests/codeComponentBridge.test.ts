@@ -247,4 +247,15 @@ describe(getClientManifestUrl.name, () => {
       }),
     ).toBe("/__app/dist/Client/wf-manifest.json");
   });
+
+  test("uses an explicit base URL", () => {
+    expect(
+      getClientManifestUrl(config, manifestPath, {
+        devUrlMode: {
+          baseUrl: "https://preview.example.com",
+          type: "base",
+        },
+      }),
+    ).toBe("https://preview.example.com/__app/dist/Client/wf-manifest.json");
+  });
 });
