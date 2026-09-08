@@ -1,7 +1,9 @@
 import { describe, expect, test } from "@jest/globals";
+import path from "node:path";
 
 import {
   findPublishedModuleId,
+  getClientManifestUrl,
   injectCodeComponents,
   type LocalCodeComponentLibrary,
   replaceCodeComponents,
@@ -218,5 +220,29 @@ describe(injectCodeComponents.name, () => {
       html,
       injectedCount: 0,
     });
+  });
+});
+
+describe(getClientManifestUrl.name, () => {
+  const config = {
+    devServer: { port: 4000 },
+  } as Parameters<typeof getClientManifestUrl>[0];
+  const manifestPath = path.join(
+    process.cwd(),
+    "dist",
+    "Client",
+    "wf-manifest.json",
+  );
+
+  test("uses localhost by default", () => {
+    expect(getClientManifestUrl(config, manifestPath)).toBe(
+      "http://localhost:4000/__app/dist/Client/wf-manifest.json",
+    );
+  });
+
+  test("uses a root-relative URL when enabled", () => {
+    expect(
+      getClientManifestUrl(config, manifestPath, { relativeUrls: true }),
+    ).toBe("/__app/dist/Client/wf-manifest.json");
   });
 });

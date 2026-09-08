@@ -3,6 +3,7 @@ import path from "path";
 
 import type { PeakflowConfig } from "peakflow/config";
 
+import { type DevUrlOptions, getDevServerUrl } from "./devUrl.js";
 import { devLogger as logger } from "./taskLogger.js";
 import {
   stringifyHtmlElement,
@@ -131,9 +132,10 @@ export function findPublishedModuleId(
   return bestCandidate[0];
 }
 
-function getClientManifestUrl(
+export function getClientManifestUrl(
   config: PeakflowConfig,
   manifestPath: string,
+  options?: DevUrlOptions,
 ): string {
   const relativePath = path.relative(process.cwd(), manifestPath);
 
@@ -144,7 +146,7 @@ function getClientManifestUrl(
   }
 
   const urlPath = relativePath.split(path.sep).join("/");
-  return `http://localhost:${config.devServer.port}${routes.app}/${urlPath}`;
+  return getDevServerUrl(config, `${routes.app}/${urlPath}`, options);
 }
 
 /**
@@ -153,6 +155,7 @@ function getClientManifestUrl(
  */
 export function loadLocalCodeComponentLibrary(
   config: PeakflowConfig,
+  options?: DevUrlOptions,
 ): LocalCodeComponentLibrary | undefined {
   const clientDirectory = path.resolve(config.build.outdir, "Client");
   const clientManifestPath = path.join(clientDirectory, "wf-manifest.json");
@@ -179,7 +182,7 @@ export function loadLocalCodeComponentLibrary(
   }
 
   return {
-    clientModuleUrl: getClientManifestUrl(config, clientManifestPath),
+    clientModuleUrl: getClientManifestUrl(config, clientManifestPath, options),
     componentIds,
     moduleId: federationManifest.name,
   };

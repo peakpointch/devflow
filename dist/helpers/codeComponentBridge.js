@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { getDevServerUrl } from "./devUrl.js";
 import { devLogger as logger } from "./taskLogger.js";
 import {
   stringifyHtmlElement,
@@ -56,7 +57,7 @@ function findPublishedModuleId(html, library) {
   }
   return bestCandidate[0];
 }
-function getClientManifestUrl(config, manifestPath) {
+function getClientManifestUrl(config, manifestPath, options) {
   const relativePath = path.relative(process.cwd(), manifestPath);
   if (relativePath.startsWith("..") || path.isAbsolute(relativePath)) {
     throw new Error(
@@ -64,9 +65,9 @@ function getClientManifestUrl(config, manifestPath) {
     );
   }
   const urlPath = relativePath.split(path.sep).join("/");
-  return `http://localhost:${config.devServer.port}${routes.app}/${urlPath}`;
+  return getDevServerUrl(config, `${routes.app}/${urlPath}`, options);
 }
-function loadLocalCodeComponentLibrary(config) {
+function loadLocalCodeComponentLibrary(config, options) {
   const clientDirectory = path.resolve(config.build.outdir, "Client");
   const clientManifestPath = path.join(clientDirectory, "wf-manifest.json");
   const federationManifestPath = path.join(clientDirectory, "mf-manifest.json");
@@ -84,7 +85,7 @@ function loadLocalCodeComponentLibrary(config) {
     throw new Error("Local Code Component manifests are incomplete");
   }
   return {
-    clientModuleUrl: getClientManifestUrl(config, clientManifestPath),
+    clientModuleUrl: getClientManifestUrl(config, clientManifestPath, options),
     componentIds,
     moduleId: federationManifest.name
   };
@@ -195,6 +196,7 @@ function injectCodeComponents(html, library) {
 }
 export {
   findPublishedModuleId,
+  getClientManifestUrl,
   injectCodeComponents,
   loadLocalCodeComponentLibrary,
   replaceCodeComponents

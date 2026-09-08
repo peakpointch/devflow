@@ -205,7 +205,9 @@ function startWebflowProxy(config, reloadEmitter, { componentModuleId, relativeU
   const app = express();
   let localCodeComponents;
   try {
-    localCodeComponents = loadLocalCodeComponentLibrary(config);
+    localCodeComponents = loadLocalCodeComponentLibrary(config, {
+      relativeUrls
+    });
   } catch (err) {
     logger.warn("Failed to load local Code Component library:", err);
   }
