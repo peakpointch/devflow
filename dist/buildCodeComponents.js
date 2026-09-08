@@ -4,6 +4,7 @@ import fs from "node:fs";
 import fsPromises from "node:fs/promises";
 import path from "node:path";
 import picomatch from "picomatch";
+import { getDevServerUrl } from "./helpers/devUrl.js";
 import { routes } from "./helpers/routes.js";
 const sourceNamespace = "peakflow-browser-source";
 const sourceExtensions = [".tsx", ".ts", ".jsx", ".js", ".mjs"];
@@ -117,9 +118,9 @@ function getClientDirectory(config, projectDirectory) {
   }
   return clientDirectory;
 }
-function getPublicPath(config, projectDirectory, clientDirectory) {
+function getPublicPath(config, projectDirectory, clientDirectory, options) {
   const relativePath = path.relative(projectDirectory, clientDirectory).split(path.sep).join("/");
-  return `http://localhost:${config.devServer.port}${routes.app}/${relativePath}/`;
+  return getDevServerUrl(config, `${routes.app}/${relativePath}/`, options);
 }
 function createEntrySource(moduleId, components) {
   const componentImports = components.map(
@@ -215,7 +216,7 @@ function createFederationManifest(moduleId, components, publicPath, cssFilename)
     ]
   };
 }
-async function createCodeComponentBuilder(config) {
+async function createCodeComponentBuilder(config, options) {
   const projectDirectory = process.cwd();
   const webflowConfigPath = path.join(projectDirectory, "webflow.json");
   if (!fs.existsSync(webflowConfigPath)) return void 0;
@@ -238,7 +239,12 @@ async function createCodeComponentBuilder(config) {
   }
   const moduleId = getModuleId(library.name);
   const clientDirectory = getClientDirectory(config, projectDirectory);
-  const publicPath = getPublicPath(config, projectDirectory, clientDirectory);
+  const publicPath = getPublicPath(
+    config,
+    projectDirectory,
+    clientDirectory,
+    options
+  );
   const componentPatterns = library.components;
   await fsPromises.mkdir(clientDirectory, { recursive: true });
   let buildContext;
@@ -332,5 +338,6 @@ async function createCodeComponentBuilder(config) {
 }
 export {
   createCodeComponentBuilder,
+  getPublicPath,
   isCodeComponentBuildInput
 };

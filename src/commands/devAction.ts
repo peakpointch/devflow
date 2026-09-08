@@ -61,7 +61,9 @@ export async function devAction({
   // Initial build
   await buildDev(config);
 
-  const codeComponentBuilder = await createCodeComponentBuilder(config);
+  const codeComponentBuilder = await createCodeComponentBuilder(config, {
+    relativeUrls,
+  });
   let codeComponentBuild = await codeComponentBuilder?.build();
 
   if (codeComponentBuild) {

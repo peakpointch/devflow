@@ -7,6 +7,7 @@ import picomatch from "picomatch";
 
 import type { PeakflowConfig } from "peakflow/config";
 
+import { type DevUrlOptions, getDevServerUrl } from "./helpers/devUrl.js";
 import { routes } from "./helpers/routes.js";
 
 interface WebflowConfig {
@@ -35,6 +36,8 @@ export interface CodeComponentBuilder {
   build(): Promise<CodeComponentBuildResult>;
   dispose(): Promise<void>;
 }
+
+export type CodeComponentBuilderOptions = DevUrlOptions;
 
 const sourceNamespace = "peakflow-browser-source";
 const sourceExtensions = [".tsx", ".ts", ".jsx", ".js", ".mjs"];
@@ -228,17 +231,18 @@ function getClientDirectory(
   return clientDirectory;
 }
 
-function getPublicPath(
+export function getPublicPath(
   config: PeakflowConfig,
   projectDirectory: string,
   clientDirectory: string,
+  options?: DevUrlOptions,
 ): string {
   const relativePath = path
     .relative(projectDirectory, clientDirectory)
     .split(path.sep)
     .join("/");
 
-  return `http://localhost:${config.devServer.port}${routes.app}/${relativePath}/`;
+  return getDevServerUrl(config, `${routes.app}/${relativePath}/`, options);
 }
 
 function createEntrySource(
@@ -364,6 +368,7 @@ function createFederationManifest(
  */
 export async function createCodeComponentBuilder(
   config: PeakflowConfig,
+  options?: CodeComponentBuilderOptions,
 ): Promise<CodeComponentBuilder | undefined> {
   const projectDirectory = process.cwd();
   const webflowConfigPath = path.join(projectDirectory, "webflow.json");
@@ -399,7 +404,12 @@ export async function createCodeComponentBuilder(
 
   const moduleId = getModuleId(library.name);
   const clientDirectory = getClientDirectory(config, projectDirectory);
-  const publicPath = getPublicPath(config, projectDirectory, clientDirectory);
+  const publicPath = getPublicPath(
+    config,
+    projectDirectory,
+    clientDirectory,
+    options,
+  );
   const componentPatterns = library.components as string[];
 
   await fsPromises.mkdir(clientDirectory, { recursive: true });

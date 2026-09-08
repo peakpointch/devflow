@@ -37,7 +37,9 @@ async function devAction({
   const reloadEmitter = new events.EventEmitter();
   logger.info("Read the docs at https://github.com/peakpointch/peakflow-cli");
   await buildDev(config);
-  const codeComponentBuilder = await createCodeComponentBuilder(config);
+  const codeComponentBuilder = await createCodeComponentBuilder(config, {
+    relativeUrls
+  });
   let codeComponentBuild = await codeComponentBuilder?.build();
   if (codeComponentBuild) {
     logCodeComponentBuild(codeComponentBuild);
