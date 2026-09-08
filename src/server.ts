@@ -129,7 +129,7 @@ function routeGetRequests(
   config: PeakflowConfig,
   localCodeComponents: LocalCodeComponentLibrary | undefined,
   componentModuleId?: string,
-  relativeUrls = false,
+  devUrlOptions?: DevUrlOptions,
 ): void {
   app.get(/.*/, async (proxyReq, proxyRes) => {
     const performanceStart = performance.now();
@@ -167,7 +167,7 @@ function routeGetRequests(
           config,
           includeComponentDiagnostics: !proxyReq.path.endsWith(".map"),
           localCodeComponents,
-          relativeUrls,
+          ...devUrlOptions,
         });
 
         assetMessage = pipelineResult.assetMessage;
@@ -331,14 +331,17 @@ export interface WebflowProxyOptions extends DevUrlOptions {
 export function startWebflowProxy(
   config: PeakflowConfig,
   reloadEmitter: events.EventEmitter,
-  { componentModuleId, relativeUrls = false }: WebflowProxyOptions = {},
+  {
+    componentModuleId,
+    devUrlMode = { type: "localhost" },
+  }: WebflowProxyOptions = {},
 ): void {
   const app = express();
   let localCodeComponents: LocalCodeComponentLibrary | undefined;
 
   try {
     localCodeComponents = loadLocalCodeComponentLibrary(config, {
-      relativeUrls,
+      devUrlMode,
     });
   } catch (err) {
     logger.warn("Failed to load local Code Component library:", err);
@@ -372,13 +375,9 @@ export function startWebflowProxy(
   app.use(express.json());
 
   setupLivereload(app, reloadEmitter, config);
-  routeGetRequests(
-    app,
-    config,
-    localCodeComponents,
-    componentModuleId,
-    relativeUrls,
-  );
+  routeGetRequests(app, config, localCodeComponents, componentModuleId, {
+    devUrlMode,
+  });
   routeWebflowAuthRequests(app, config);
 
   app.listen(config.devServer.port, () => {

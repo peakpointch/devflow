@@ -242,7 +242,9 @@ describe(getClientManifestUrl.name, () => {
 
   test("uses a root-relative URL when enabled", () => {
     expect(
-      getClientManifestUrl(config, manifestPath, { relativeUrls: true }),
+      getClientManifestUrl(config, manifestPath, {
+        devUrlMode: { type: "relative" },
+      }),
     ).toBe("/__app/dist/Client/wf-manifest.json");
   });
 });

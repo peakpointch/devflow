@@ -12,9 +12,9 @@ function htmlPipeline(html, {
   config,
   includeComponentDiagnostics,
   localCodeComponents,
-  relativeUrls = false
+  devUrlMode = { type: "localhost" }
 }) {
-  const assetResult = replaceAssets(html, config, { relativeUrls });
+  const assetResult = replaceAssets(html, config, { devUrlMode });
   const componentResult = localCodeComponents ? replaceCodeComponents(
     assetResult.html,
     localCodeComponents,

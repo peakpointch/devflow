@@ -35,10 +35,11 @@ async function devAction({
 } = {}) {
   const config = await parseConfigAction();
   const reloadEmitter = new events.EventEmitter();
+  const devUrlMode = relativeUrls ? { type: "relative" } : { type: "localhost" };
   logger.info("Read the docs at https://github.com/peakpointch/peakflow-cli");
   await buildDev(config);
   const codeComponentBuilder = await createCodeComponentBuilder(config, {
-    relativeUrls
+    devUrlMode
   });
   let codeComponentBuild = await codeComponentBuilder?.build();
   if (codeComponentBuild) {
@@ -46,7 +47,7 @@ async function devAction({
   }
   startWebflowProxy(config, reloadEmitter, {
     componentModuleId,
-    relativeUrls
+    devUrlMode
   });
   reloadEmitter.emit("script-change", config.build.modules);
   const watcher = chokidar.watch(config.devServer.watchList, {

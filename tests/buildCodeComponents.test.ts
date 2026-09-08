@@ -14,7 +14,7 @@ describe(getPublicPath.name, () => {
 
     expect(
       getPublicPath(config, projectDirectory, clientDirectory, {
-        relativeUrls: true,
+        devUrlMode: { type: "relative" },
       }),
     ).toBe("/__app/dist/Client/");
   });

@@ -77,7 +77,7 @@ async function requestWebflowGET(config, proxyReq) {
     responseType: "arraybuffer"
   });
 }
-function routeGetRequests(app, config, localCodeComponents, componentModuleId, relativeUrls = false) {
+function routeGetRequests(app, config, localCodeComponents, componentModuleId, devUrlOptions) {
   app.get(/.*/, async (proxyReq, proxyRes) => {
     const performanceStart = performance.now();
     let assetMessage = "";
@@ -100,7 +100,7 @@ function routeGetRequests(app, config, localCodeComponents, componentModuleId, r
           config,
           includeComponentDiagnostics: !proxyReq.path.endsWith(".map"),
           localCodeComponents,
-          relativeUrls
+          ...devUrlOptions
         });
         assetMessage = pipelineResult.assetMessage;
         componentMessage = pipelineResult.componentMessage;
@@ -201,12 +201,15 @@ function setupLivereload(app, reloadEmitter, config) {
     );
   });
 }
-function startWebflowProxy(config, reloadEmitter, { componentModuleId, relativeUrls = false } = {}) {
+function startWebflowProxy(config, reloadEmitter, {
+  componentModuleId,
+  devUrlMode = { type: "localhost" }
+} = {}) {
   const app = express();
   let localCodeComponents;
   try {
     localCodeComponents = loadLocalCodeComponentLibrary(config, {
-      relativeUrls
+      devUrlMode
     });
   } catch (err) {
     logger.warn("Failed to load local Code Component library:", err);
@@ -236,13 +239,9 @@ function startWebflowProxy(config, reloadEmitter, { componentModuleId, relativeU
   app.use(express.urlencoded({ extended: true }));
   app.use(express.json());
   setupLivereload(app, reloadEmitter, config);
-  routeGetRequests(
-    app,
-    config,
-    localCodeComponents,
-    componentModuleId,
-    relativeUrls
-  );
+  routeGetRequests(app, config, localCodeComponents, componentModuleId, {
+    devUrlMode
+  });
   routeWebflowAuthRequests(app, config);
   app.listen(config.devServer.port, () => {
     if (localCodeComponents) {

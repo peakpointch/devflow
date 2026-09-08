@@ -1,15 +1,25 @@
 import type { PeakflowConfig } from "peakflow/config";
 
+export type DevUrlMode =
+  | { type: "localhost" }
+  | { type: "relative" }
+  | { baseUrl: string; type: "base" };
+
 export interface DevUrlOptions {
-  relativeUrls?: boolean;
+  devUrlMode?: DevUrlMode;
 }
 
 export function getDevServerUrl(
   config: PeakflowConfig,
   path: string,
-  { relativeUrls = false }: DevUrlOptions = {},
+  { devUrlMode = { type: "localhost" } }: DevUrlOptions = {},
 ): string {
-  return relativeUrls
-    ? path
-    : `http://localhost:${config.devServer.port}${path}`;
+  switch (devUrlMode.type) {
+    case "relative":
+      return path;
+    case "base":
+      return `${devUrlMode.baseUrl}${path}`;
+    case "localhost":
+      return `http://localhost:${config.devServer.port}${path}`;
+  }
 }

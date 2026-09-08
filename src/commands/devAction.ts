@@ -11,6 +11,7 @@ import {
   type CodeComponentBuildResult,
 } from "../buildCodeComponents.js";
 import { startWebflowProxy } from "../server.js";
+import type { DevUrlMode } from "../helpers/devUrl.js";
 
 /**
  * Start the dev server (with livereload)
@@ -55,6 +56,9 @@ export async function devAction({
 }: DevOptions = {}) {
   const config = await parseConfigAction();
   const reloadEmitter = new events.EventEmitter();
+  const devUrlMode: DevUrlMode = relativeUrls
+    ? { type: "relative" }
+    : { type: "localhost" };
 
   logger.info("Read the docs at https://github.com/peakpointch/peakflow-cli");
 
@@ -62,7 +66,7 @@ export async function devAction({
   await buildDev(config);
 
   const codeComponentBuilder = await createCodeComponentBuilder(config, {
-    relativeUrls,
+    devUrlMode,
   });
   let codeComponentBuild = await codeComponentBuilder?.build();
 
@@ -73,7 +77,7 @@ export async function devAction({
   // Start webflow proxy server, mirroring the .webflow.io staging domain
   startWebflowProxy(config, reloadEmitter, {
     componentModuleId,
-    relativeUrls,
+    devUrlMode,
   });
   reloadEmitter.emit("script-change", config.build.modules);
 

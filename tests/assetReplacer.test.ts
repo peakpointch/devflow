@@ -80,7 +80,7 @@ describe(replaceAssets.name, () => {
     ].join("");
 
     const result = replaceAssets(html, config(false), {
-      relativeUrls: true,
+      devUrlMode: { type: "relative" },
     });
 
     expect(result.html).toContain(`src="/__app/scripts/app.js"`);

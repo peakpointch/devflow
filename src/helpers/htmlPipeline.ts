@@ -33,7 +33,7 @@ export function htmlPipeline(
     config,
     includeComponentDiagnostics,
     localCodeComponents,
-    relativeUrls = false,
+    devUrlMode = { type: "localhost" },
   }: HtmlPipelineOptions,
 ): HtmlPipelineResult {
   /* ========================== */
@@ -41,7 +41,7 @@ export function htmlPipeline(
   /* ========================== */
 
   // 1. Replacing asset URLs
-  const assetResult = replaceAssets(html, config, { relativeUrls });
+  const assetResult = replaceAssets(html, config, { devUrlMode });
 
   // 2. Replacing react components
   const componentResult = localCodeComponents
